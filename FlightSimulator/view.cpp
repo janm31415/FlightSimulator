@@ -208,7 +208,10 @@ void view::loop()
     ++_st_props.frame;
 
     std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(1.0));
-    //SDL_GL_SwapWindow(_window);
+
+#if defined(RENDERDOOS_OPENGL)
+    SDL_GL_SwapWindow(_window);
+#endif
     last_tic = tic;
     }
   }

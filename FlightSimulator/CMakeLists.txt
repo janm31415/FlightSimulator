@@ -17,13 +17,18 @@ if (UNIX)
 endif (UNIX)
 
 set(HDRS
+data.h
 debug.h
+gl_shaders.h
+physics.h
 view.h
 )
 	
 set(SRCS
 debug.cpp
+gl_shaders.cpp
 main.cpp
+physics.cpp
 view.cpp
 )
 

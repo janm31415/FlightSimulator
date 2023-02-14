@@ -6,6 +6,8 @@
 #include "debug.h"
 #include "view.h"
 
+#define JTK_QBVH_IMPLEMENTATION
+#include "jtk/qbvh.h"
 
 int main(int argc, char** argv)
   {
