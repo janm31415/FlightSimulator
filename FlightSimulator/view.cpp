@@ -8,6 +8,8 @@
 #define MTL_PRIVATE_IMPLEMENTATION
 
 #include "metal/Metal.hpp"
+#include "../SDL-metal/SDL_metal.h"
+#include "SDL_metal.h"
 #else
 #include "glew/GL/glew.h"
 #endif
@@ -18,6 +20,21 @@ view::view(int /*argc*/, char** /*argv*/) : _w(1600), _h(900), _quit(false)
   {
   // Setup window
 #if defined(RENDERDOOS_METAL)
+  SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
+  
+  _window = SDL_CreateWindow("FlightSimulator",
+    SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    _w, _h, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
+
+  _metalView = SDL_Metal_CreateView(_window);
+  void* layer = SDL_Metal_GetLayer(_metalView);
+  MTL::Device* metalDevice = MTL::CreateSystemDefaultDevice();
+  assign_device(layer, metalDevice);
+  if (!_window)
+    throw std::runtime_error("SDL can't create a window");
+    
+    
+  _engine.init(metalDevice, nullptr, RenderDoos::renderer_type::METAL);
 #else
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -163,6 +180,8 @@ void view::loop()
 
     RenderDoos::render_drawables drawables;
 #if defined(RENDERDOOS_METAL)
+    void* layer = SDL_Metal_GetLayer(_metalView);
+    CA::MetalDrawable* drawable = next_drawable(layer);
     drawables.metal_drawable = (void*)drawable;
     drawables.metal_screen_texture = (void*)drawable->texture();
 #endif
@@ -189,7 +208,7 @@ void view::loop()
     ++_st_props.frame;
 
     std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(1.0));
-    SDL_GL_SwapWindow(_window);
+    //SDL_GL_SwapWindow(_window);
     last_tic = tic;
     }
   }
