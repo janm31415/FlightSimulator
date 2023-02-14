@@ -56,6 +56,8 @@ add_subdirectory(glew)
 endif (${FLIGHTSIM_PLATFORM} STREQUAL "win32")
 add_subdirectory(RenderDoos)
 add_subdirectory(SDL2)
+add_subdirectory(FlightSimulator)
+
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
