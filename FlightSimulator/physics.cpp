@@ -1,5 +1,17 @@
 #include "physics.h"
 
+
+namespace
+  {
+  jtk::vec3<float> operator * (const jtk::float4& q, const jtk::vec3<float>& v)
+    {
+    jtk::vec3<float> quatvector(q[0], q[1], q[2]);
+    jtk::vec3<float> uv(jtk::cross(quatvector, v));
+    jtk::vec3<float> uuv(jtk::cross(quatvector, uv));
+    return v + ((uv * q[3]) + uuv) * 2.f;
+    }
+  }
+
 namespace physics
   {
 
@@ -130,7 +142,7 @@ namespace physics
     velocity = jtk::vec3<float>(0);
     angular_velocity = jtk::vec3<float>(0);
     apply_gravity = true;
-    orientation = jtk::get_identity();
+    orientation = jtk::float4(0, 0, 0, 1);
     }
 
   RigidBody::RigidBody()
@@ -143,9 +155,8 @@ namespace physics
     m_velocity = jtk::vec3<float>(0);
     m_angular_velocity = jtk::vec3<float>(0);
     m_apply_gravity = true;
-    m_orientation = jtk::get_identity();
+    m_orientation = jtk::float4(0, 0, 0, 1);
     jtk::invert(m_inertia_inverse, m_inertia);
-    m_orientation_inverse = jtk::invert_orthonormal(m_orientation);
     }
 
   RigidBody::RigidBody(const RigidBodyParams& params)
@@ -160,7 +171,6 @@ namespace physics
     m_apply_gravity = params.apply_gravity;
     m_orientation = params.orientation;
     jtk::invert(m_inertia_inverse, m_inertia);
-    m_orientation_inverse = jtk::invert_orthonormal(m_orientation);
     }
 
   jtk::vec3<float> RigidBody::get_point_velocity(const jtk::vec3<float>& point) const
@@ -176,7 +186,7 @@ namespace physics
 
   jtk::vec3<float> RigidBody::transform_direction(const jtk::vec3<float>& direction) const
     {
-    return utils::transform_vector(m_orientation, direction);
+    return m_orientation*direction;    
     }
 
   jtk::vec3<float> RigidBody::get_body_velocity() const
@@ -186,7 +196,7 @@ namespace physics
 
   jtk::vec3<float> RigidBody::inverse_transform_direction(const jtk::vec3<float>& direction) const
     {
-    return utils::transform_vector(m_orientation_inverse, direction);
+    return jtk::quaternion_inverse(m_orientation)*direction;
     }
 
   void RigidBody::set_inertia(const jtk::matf9& inertia_tensor)
@@ -202,7 +212,7 @@ namespace physics
 
   void RigidBody::add_relative_force(const jtk::vec3<float>& force)
     {
-    m_force = m_force + utils::transform_vector(m_orientation, force);
+    m_force = m_force + m_orientation * force;
     }
 
   void RigidBody::add_torque(const jtk::vec3<float>& torque)
@@ -267,12 +277,10 @@ namespace physics
 
 
     m_angular_velocity = m_angular_velocity + utils::transform_vector(m_inertia_inverse,
-      m_torque - jtk::cross(m_angular_velocity, utils::transform_vector(m_inertia, m_angular_velocity))) * dt;
+      m_torque - jtk::cross(m_angular_velocity, utils::transform_vector(m_inertia, m_angular_velocity))) * dt;    
 
-    jtk::float4x4 rot = jtk::quaternion_to_rotation(jtk::float4(0, m_angular_velocity.x, m_angular_velocity.y, m_angular_velocity.z));
-
-    m_orientation = m_orientation + jtk::matrix_matrix_multiply(m_orientation, rot) * (0.5f * dt);
-    m_orientation_inverse = jtk::invert_orthonormal(m_orientation);
+    m_orientation = m_orientation + jtk::quaternion_multiply(m_orientation, jtk::float4(m_angular_velocity.x, m_angular_velocity.y, m_angular_velocity.z, 0)) * (0.5f * dt);
+    m_orientation = jtk::quaternion_normalize(m_orientation);
 
     // reset accumulators
     m_force = jtk::vec3<float>(0, 0, 0);

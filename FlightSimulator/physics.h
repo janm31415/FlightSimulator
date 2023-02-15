@@ -143,7 +143,7 @@ namespace physics
     jtk::vec3<float> position;
     jtk::vec3<float> velocity;
     jtk::vec3<float> angular_velocity;
-    jtk::float4x4 orientation;
+    jtk::float4 orientation;
     bool apply_gravity;
     };
 
@@ -206,8 +206,7 @@ namespace physics
       jtk::vec3<float> m_torque;
       float m_mass;
       jtk::vec3<float> m_position;
-      jtk::float4x4 m_orientation;
-      jtk::float4x4 m_orientation_inverse;
+      jtk::float4 m_orientation;
       jtk::vec3<float> m_velocity;
       jtk::vec3<float> m_angular_velocity;
       jtk::matf9 m_inertia;
