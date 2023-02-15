@@ -27,7 +27,7 @@ namespace physics
 
     jtk::matf9 tensor(const jtk::vec3<float>& moment_of_inertia)
       {
-      jtk::matf9 t(3,3);
+      jtk::matf9 t(3, 3);
       t << moment_of_inertia.x, 0.f, 0.f, 0.f, moment_of_inertia.y, 0.f, 0.f, 0.f, moment_of_inertia.z;
       return t;
       }
@@ -80,14 +80,14 @@ namespace physics
         }
 
       t << Ixx, -Ixy, -Ixz,
-          -Ixy,  Iyy, -Iyz,
-          -Ixz, -Iyz,  Izz;
+        -Ixy, Iyy, -Iyz,
+        -Ixz, -Iyz, Izz;
       return t;
       }
 
     } // namespace inertia
 
-  namespace utils 
+  namespace utils
     {
 
     jtk::vec3<float> transform_point(const jtk::float4x4& pose, const jtk::vec3<float>& pt)
@@ -150,7 +150,7 @@ namespace physics
 
   RigidBody::RigidBody(const RigidBodyParams& params)
     {
-    m_mass = 1.f;
+    m_mass = params.mass;
     m_inertia = params.inertia;
     m_force = jtk::vec3<float>(0);
     m_torque = jtk::vec3<float>(0);
@@ -271,11 +271,11 @@ namespace physics
 
     jtk::float4x4 rot = jtk::quaternion_to_rotation(jtk::float4(0, m_angular_velocity.x, m_angular_velocity.y, m_angular_velocity.z));
 
-    m_orientation = m_orientation + jtk::matrix_matrix_multiply(m_orientation, rot)*(0.5f*dt);    
+    m_orientation = m_orientation + jtk::matrix_matrix_multiply(m_orientation, rot) * (0.5f * dt);
     m_orientation_inverse = jtk::invert_orthonormal(m_orientation);
 
     // reset accumulators
-    m_force = jtk::vec3<float>(0,0,0);
+    m_force = jtk::vec3<float>(0, 0, 0);
     m_torque = jtk::vec3<float>(0, 0, 0);
     }
 

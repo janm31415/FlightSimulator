@@ -27,7 +27,7 @@ struct Joystick
   float throttle = 0;
   };
 
-view::view(int /*argc*/, char** /*argv*/) : _w(1600), _h(900), _quit(false)
+view::view(int /*argc*/, char** /*argv*/) : _w(160), _h(90), _quit(false)
   {
   // Setup window
 #if defined(RENDERDOOS_METAL)

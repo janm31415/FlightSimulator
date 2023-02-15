@@ -130,10 +130,13 @@ void Aircraft::update(physics::seconds dt)
     log_timer = 0;
 #if 1
     printf(
-      "%.2f km/h, thr: %.2f, alt: %.2f m\n",
+      "%.2f km/h, thr: %.2f, alt: %.2f m,  ang. vel: %.2f, %.2f, %.2f\n",
       physics::units::kilometer_per_hour(jtk::length(rigid_body.get_velocity())),
       engine.throttle,
-      rigid_body.get_position().y
+      rigid_body.get_position().y,
+      rigid_body.get_angular_velocity().x,
+      rigid_body.get_angular_velocity().y,
+      rigid_body.get_angular_velocity().z
     );
 #endif
     }
