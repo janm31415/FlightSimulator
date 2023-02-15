@@ -214,6 +214,16 @@ namespace physics
     return m_force;
     }
 
+  jtk::vec3<float> RigidBody::get_position() const
+    {
+    return m_position;
+    }
+
+  jtk::vec3<float> RigidBody::get_velocity() const
+    {
+    return m_velocity;
+    }
+
   void RigidBody::update(seconds dt)
     {
     jtk::vec3<float> acceleration = m_force / m_mass;

@@ -20,6 +20,7 @@ set(HDRS
 data.h
 debug.h
 gl_shaders.h
+flightmodel.h
 physics.h
 view.h
 )
@@ -27,6 +28,7 @@ view.h
 set(SRCS
 debug.cpp
 gl_shaders.cpp
+flightmodel.cpp
 main.cpp
 physics.cpp
 view.cpp

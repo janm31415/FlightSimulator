@@ -1,14 +1,10 @@
 #pragma once
 
-#include <array>
-
-struct ValueTuple
-  {
-  float alpha, cl, cd;
-  };
+#include "flightmodel.h"
+#include <vector>
 
 // NACA 0012 (n0012-il) Xfoil prediction polar at RE=1,000,000 Ncrit=9
-std::array<ValueTuple, 147> NACA_0012_data = {
+std::vector<ValueTuple> NACA_0012_data = {
     {-18.500f, -1.2258f, 0.10236f},
     {-18.250f, -1.2456f, 0.09505f},
     {-18.000f, -1.2659f, 0.08782f},
@@ -158,7 +154,7 @@ std::array<ValueTuple, 147> NACA_0012_data = {
     {18.500f, 1.2284f, 0.10229f} };
 
 // NACA 2412 (naca2412-il) Xfoil prediction polar at RE=1,000,000 Ncrit=9
-std::array<ValueTuple, 145> NACA_2412_data = {
+std::vector<ValueTuple> NACA_2412_data = {
     {-17.500f, -1.1118f, 0.08608f},
     {-17.250f, -1.1738f, 0.07238f},
     {-17.000f, -1.2296f, 0.05928f},

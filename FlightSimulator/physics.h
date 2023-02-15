@@ -25,6 +25,7 @@ namespace physics
   const jtk::vec3<float> FORWARD(1.0f, 0.0f, 0.0f);
   const jtk::vec3<float> BACKWARD(-1.0f, 0.0f, 0.0f);
 
+  const jtk::vec3<float> ORIGIN(0.0f, 0.0f, 0.0f);
   const jtk::vec3<float> X_AXIS(1.0f, 0.0f, 0.0f);
   const jtk::vec3<float> Y_AXIS(0.0f, 1.0f, 0.0f);
   const jtk::vec3<float> Z_AXIS(0.0f, 0.0f, 1.0f);
@@ -121,6 +122,16 @@ namespace physics
       return celsius - 273.15f;
       }
 
+    inline float radians(float deg)
+      {
+      return deg/180.f*3.1415926535897f;
+      }
+
+    inline float degrees(float rad)
+      {
+      return rad/3.1415926535897f*180.f;
+      }
+
     } // namespace units
 
 
@@ -174,6 +185,10 @@ namespace physics
 
       // get torque in world space
       jtk::vec3<float> get_force() const;
+
+      jtk::vec3<float> get_position() const;
+
+      jtk::vec3<float> get_velocity() const;
 
       void update(seconds dt);
 
