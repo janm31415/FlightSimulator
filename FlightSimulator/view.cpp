@@ -16,12 +16,23 @@
 
 #include <thread>
 
+#include "scene.h"
+#include "flightmodel.h"
+
+struct Joystick 
+  {  
+  float roll = 0;
+  float pitch = 0;
+  float yaw = 0;
+  float throttle = 0;
+  };
+
 view::view(int /*argc*/, char** /*argv*/) : _w(1600), _h(900), _quit(false)
   {
   // Setup window
 #if defined(RENDERDOOS_METAL)
   SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
-  
+
   _window = SDL_CreateWindow("FlightSimulator",
     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
     _w, _h, SDL_WINDOW_RESIZABLE | SDL_WINDOW_SHOWN);
@@ -32,8 +43,8 @@ view::view(int /*argc*/, char** /*argv*/) : _w(1600), _h(900), _quit(false)
   assign_device(layer, metalDevice);
   if (!_window)
     throw std::runtime_error("SDL can't create a window");
-    
-    
+
+
   _engine.init(metalDevice, nullptr, RenderDoos::renderer_type::METAL);
 #else
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -67,116 +78,122 @@ view::view(int /*argc*/, char** /*argv*/) : _w(1600), _h(900), _quit(false)
 
   _engine.init(nullptr, nullptr, RenderDoos::renderer_type::OPENGL);
 #endif  
-
-  _mv_props.init(_w, _h);
-  _mv_props.orthogonal = 1;
-  _mv_props.near_clip = 1.f;
-  _mv_props.zoom_x = 1.f;
-  _mv_props.zoom_y = 1.f;
-  _mv_props.light_dir = RenderDoos::normalize(RenderDoos::float4(0, 0, 1, 0));
-  _st_props.frame = 0;
-  _st_props.time = 0;
-  _st_props.time_delta = 0;
-  _material = new RenderDoos::shadertoy_material();
-
-  _prepare_shadertoy_shader();
   }
 
 view::~view()
   {
   _engine.destroy();
-  delete _material;
-  _material = nullptr;
-  }
-
-void view::_prepare_shadertoy_shader()
-  {
-#if defined(RENDERDOOS_METAL)
-  std::string script = std::string(R"(void mainImage(thread float4& fragColor, float2 fragCoord, float iTime, float3 iResolution)
-{
-  float2 uv = fragCoord / iResolution.xy;
-  float3 col = 0.5 + 0.5*cos(iTime + uv.xyx + float3(0, 2, 4));
-  
-  fragColor = float4(col[0], col[1], col[2], 1);
-})");
-#else
-  std::string script = std::string(R"(void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
-    // Normalized pixel coordinates (from 0 to 1)
-    vec2 uv = fragCoord/iResolution.xy;
-
-    // Time varying pixel color
-    vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
-
-    // Output to screen
-    fragColor = vec4(col,1.0);
-})");
-#endif
-  _material->set_script(script);
-  _material->compile(&_engine);
-  _geometry_id = _engine.add_geometry(VERTEX_STANDARD);
-
-  RenderDoos::vertex_standard* vp;
-  uint32_t* ip;
-
-  _engine.geometry_begin(_geometry_id, 4, 6, (float**)&vp, (void**)&ip);
-  // drawing
-
-  vp->x = -1.f;
-  vp->y = -1.f;
-  vp->z = 0.f;
-  vp->nx = 0.f;
-  vp->ny = 0.f;
-  vp->nz = 1.f;
-  vp->u = 0.f;
-  vp->v = 0.f;
-  ++vp;
-  vp->x = 1.f;
-  vp->y = -1.f;
-  vp->z = 0.f;
-  vp->nx = 0.f;
-  vp->ny = 0.f;
-  vp->nz = 1.f;
-  vp->u = 1.f;
-  vp->v = 0.f;
-  ++vp;
-  vp->x = 1.f;
-  vp->y = 1.f;
-  vp->z = 0.f;
-  vp->nx = 0.f;
-  vp->ny = 0.f;
-  vp->nz = 1.f;
-  vp->u = 1.f;
-  vp->v = 1.f;
-  ++vp;
-  vp->x = -1.f;
-  vp->y = 1.f;
-  vp->z = 0.f;
-  vp->nx = 0.f;
-  vp->ny = 0.f;
-  vp->nz = 1.f;
-  vp->u = 0.f;
-  vp->v = 1.f;
-
-  ip[0] = 0;
-  ip[1] = 1;
-  ip[2] = 2;
-  ip[3] = 0;
-  ip[4] = 2;
-  ip[5] = 3;
-
-  _engine.geometry_end(_geometry_id);
   }
 
 void view::loop()
   {
+  const float mass = 10000.0f;
+  const float thrust = 20000.0f;
+  std::vector<physics::inertia::element> elements = {
+      physics::inertia::cube_element({-0.5f,  0.0f, -2.7f}, {6.96f, 0.10f, 3.50f}, mass * 0.25f),               // left wing
+      physics::inertia::cube_element({ 0.0f,  0.0f, -2.0f}, {3.80f, 0.10f, 1.26f}, mass * 0.05f),               // left aileron
+      physics::inertia::cube_element({ 0.0f,  0.0f,  2.0f}, {3.80f, 0.10f, 1.26f}, mass * 0.05f),               // right aileron
+      physics::inertia::cube_element({-0.5f,  0.0f,  2.7f}, {6.96f, 0.10f, 3.50f}, mass * 0.25f),               // right wing
+      physics::inertia::cube_element({-6.6f, -0.1f,  0.0f}, {6.54f, 0.10f, 2.70f}, mass * 0.2f),                // elevator
+      physics::inertia::cube_element({-6.6f,  0.0f,  0.0f}, {5.31f, 3.10f, 0.10f}, mass * 0.2f),                // rudder
+    };
+  auto inertia = physics::inertia::tensor({ 100000.0f, 400000.0f, 500000.0f });
+  auto inertia_tensor = physics::inertia::tensor(elements, true);
+  std::vector<Wing> wings = {
+    Wing({-0.5f,   0.0f, -2.7f}, 6.96f, 3.50f, &NACA_2412),              // left wing
+    Wing({ 0.0f,   0.0f, -2.0f},  3.80f, 1.26f, &NACA_0012),              // left aileron
+    Wing({ 0.0f,   0.0f,  2.0f},  3.80f, 1.26f, &NACA_0012),              // right aileron
+    Wing({-0.5f,   0.0f,  2.7f}, 6.96f, 3.50f, &NACA_2412),              // right wing
+    Wing({-6.6f, -0.1f, 0.0f},  6.54f, 2.70f, &NACA_0012),              // elevator
+    Wing({-6.6f,  0.0f,  0.0f},  5.31f, 3.10f, &NACA_0012, physics::RIGHT),  // rudder
+    };
+  jtk::vec3<float> position = jtk::vec3<float>(0.0f, 2000.0f, 0.0f);
+  jtk::vec3<float> velocity = jtk::vec3<float>(physics::units::meter_per_second(600.0f), 0.0f, 0.0f);
+
+  Aircraft aircraft(mass, thrust, inertia_tensor, wings);
+  aircraft.rigid_body.set_position(position);
+  aircraft.rigid_body.set_velocity(velocity);
+
+  Joystick joystick;
+
   auto last_tic = std::chrono::high_resolution_clock::now();
   auto start = last_tic;
   while (!_quit)
     {
-    auto tic = std::chrono::high_resolution_clock::now();    
-    _poll_for_events();
+    auto tic = std::chrono::high_resolution_clock::now();
+    float dt = (float)(std::chrono::duration_cast<std::chrono::microseconds>(tic - last_tic).count()) / 1000000.f;
+    if (dt > 0.02f)
+      dt = 0.02f;
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+      {
+      switch (event.type)
+        {
+        case SDL_QUIT:
+        {
+        _quit = true;
+        break;
+        }
+        case SDL_KEYDOWN: 
+        {
+        switch (event.key.keysym.sym) 
+          {
+          case SDLK_ESCAPE: 
+          {
+          _quit = true;
+          break;
+          }
+          } // switch (event.key.keysym.sym) 
+        break;
+        } // case SDL_KEYDOWN
+        default:
+          break;
+        }
+      }
 
+    const uint8_t* key_states = SDL_GetKeyboardState(NULL);
+    if (key_states[SDL_SCANCODE_A])
+      {
+      joystick.roll = -1.0f;
+      }
+    else if (key_states[SDL_SCANCODE_D])
+      {
+      joystick.roll = 1.0f;
+      }
+
+    if (key_states[SDL_SCANCODE_W])
+      {
+      joystick.pitch = -1.0f;
+      }
+    else if (key_states[SDL_SCANCODE_S])
+      {
+      joystick.pitch = 1.0f;
+      }
+
+    if (key_states[SDL_SCANCODE_Q])
+      {
+      joystick.yaw = 1.0f;
+      }
+    else if (key_states[SDL_SCANCODE_E])
+      {
+      joystick.yaw = -1.0f;
+      }
+
+    if (key_states[SDL_SCANCODE_J])
+      {
+      joystick.throttle -= 0.01f;
+      joystick.throttle = physics::utils::clamp(joystick.throttle, 0.0f, 1.0f);
+      }
+    else if (key_states[SDL_SCANCODE_K])
+      {
+      joystick.throttle += 0.01f;
+      joystick.throttle = physics::utils::clamp(joystick.throttle, 0.0f, 1.0f);
+      }
+
+    aircraft.joystick = jtk::vec3<float>(joystick.roll, joystick.yaw, joystick.pitch);
+    aircraft.engine.throttle = joystick.throttle;
+
+    aircraft.update(dt);
 
     RenderDoos::render_drawables drawables;
 #if defined(RENDERDOOS_METAL)
@@ -186,50 +203,26 @@ void view::loop()
     drawables.metal_screen_texture = (void*)drawable->texture();
 #endif
     _engine.frame_begin(drawables);
-    _st_props.time_delta = (float)(std::chrono::duration_cast<std::chrono::microseconds>(tic - last_tic).count()) / 1000000.f;    
-    _st_props.time = (float)(std::chrono::duration_cast<std::chrono::microseconds>(tic - start).count()) / 1000000.f;
-    _material->set_shadertoy_properties(_st_props);
 
     RenderDoos::renderpass_descriptor descr;
     descr.clear_color = 0xff203040;
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
-    descr.w = _mv_props.viewport_width;
-    descr.h = _mv_props.viewport_height;
+    descr.w = _w;
+    descr.h = _h;
 
     _engine.renderpass_begin(descr);
 
-    _engine.set_model_view_properties(_mv_props);
-    _material->bind(&_engine);
 
-    _engine.geometry_draw(_geometry_id);
 
     _engine.renderpass_end();
     _engine.frame_end();
-    ++_st_props.frame;
 
-    std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(1.0));
+
+    std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(10.0));
 
 #if defined(RENDERDOOS_OPENGL)
     SDL_GL_SwapWindow(_window);
 #endif
     last_tic = tic;
-    }
-  }
-
-void view::_poll_for_events()
-  {
-  SDL_Event event;
-  while (SDL_PollEvent(&event))
-    {
-    switch (event.type)
-      {
-      case SDL_QUIT:
-      {
-      _quit = true;
-      break;
-      }
-      default:
-        break;
-      }
     }
   }

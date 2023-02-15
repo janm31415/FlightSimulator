@@ -122,6 +122,17 @@ namespace physics
 
     } // namespace utils
 
+  RigidBodyParams::RigidBodyParams()
+    {
+    mass = 1.f;
+    inertia = inertia::tensor(inertia::cube(jtk::vec3<float>(1.0f), 1.0f));
+    position = jtk::vec3<float>(0);
+    velocity = jtk::vec3<float>(0);
+    angular_velocity = jtk::vec3<float>(0);
+    apply_gravity = true;
+    orientation = jtk::get_identity();
+    }
+
   RigidBody::RigidBody()
     {
     m_mass = 1.f;
@@ -222,6 +233,26 @@ namespace physics
   jtk::vec3<float> RigidBody::get_velocity() const
     {
     return m_velocity;
+    }
+
+  jtk::vec3<float> RigidBody::get_angular_velocity() const
+    {
+    return m_angular_velocity;
+    }
+
+  void RigidBody::set_position(const jtk::vec3<float>& pos)
+    {
+    m_position = pos;
+    }
+
+  void RigidBody::set_velocity(const jtk::vec3<float>& vel)
+    {
+    m_velocity = vel;
+    }
+
+  void RigidBody::set_angular_velocity(const jtk::vec3<float>& vel)
+    {
+    m_angular_velocity = vel;
     }
 
   void RigidBody::update(seconds dt)

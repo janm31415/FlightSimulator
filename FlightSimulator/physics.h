@@ -137,13 +137,14 @@ namespace physics
 
   struct RigidBodyParams 
     {
-    float mass = 1.0f;
+    RigidBodyParams();
+    float mass;
     jtk::matf9 inertia;
     jtk::vec3<float> position;
     jtk::vec3<float> velocity;
     jtk::vec3<float> angular_velocity;
     jtk::float4x4 orientation;
-    bool apply_gravity = true;
+    bool apply_gravity;
     };
 
   class RigidBody
@@ -189,6 +190,14 @@ namespace physics
       jtk::vec3<float> get_position() const;
 
       jtk::vec3<float> get_velocity() const;
+
+      jtk::vec3<float> get_angular_velocity() const;
+
+      void set_position(const jtk::vec3<float>& pos);
+
+      void set_velocity(const jtk::vec3<float>& vel);
+
+      void set_angular_velocity(const jtk::vec3<float>& vel);
 
       void update(seconds dt);
 

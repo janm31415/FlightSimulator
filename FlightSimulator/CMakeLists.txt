@@ -22,6 +22,7 @@ debug.h
 gl_shaders.h
 flightmodel.h
 physics.h
+scene.h
 view.h
 )
 	
@@ -31,6 +32,7 @@ gl_shaders.cpp
 flightmodel.cpp
 main.cpp
 physics.cpp
+scene.cpp
 view.cpp
 )
 
@@ -66,7 +68,7 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-DMEMORY_LEAK_TRACKING)
 
 if (WIN32)
-add_executable(FlightSimulator WIN32 ${HDRS} ${SRCS} ${SHADERS})
+add_executable(FlightSimulator ${HDRS} ${SRCS} ${SHADERS})
 else()
 add_executable(FlightSimulator ${HDRS} ${SRCS} ${STB} ${SHADERS})
 endif(WIN32)
@@ -101,4 +103,12 @@ target_link_libraries(FlightSimulator
     SDL2
     SDL2main
     )
-endif(${FLIGHTSIM_PLATFORM} STREQUAL "win32")       
+endif(${FLIGHTSIM_PLATFORM} STREQUAL "win32")      
+
+if (WIN32)
+add_custom_command(TARGET FlightSimulator POST_BUILD 
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" ${CMAKE_CURRENT_BINARY_DIR}/assets)
+endif (WIN32)
+
+add_custom_command(TARGET FlightSimulator POST_BUILD 
+   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:FlightSimulator>/assets") 
