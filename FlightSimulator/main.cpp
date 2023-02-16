@@ -9,6 +9,12 @@
 #define JTK_QBVH_IMPLEMENTATION
 #include "jtk/qbvh.h"
 
+#define JTK_PLY_IMPLEMENTATION
+#include "jtk/ply.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 int main(int argc, char** argv)
   {
   init_debug();

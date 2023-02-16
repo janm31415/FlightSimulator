@@ -21,6 +21,7 @@ data.h
 debug.h
 gl_shaders.h
 flightmodel.h
+material.h
 physics.h
 scene.h
 view.h
@@ -31,6 +32,7 @@ debug.cpp
 gl_shaders.cpp
 flightmodel.cpp
 main.cpp
+material.cpp
 physics.cpp
 scene.cpp
 view.cpp

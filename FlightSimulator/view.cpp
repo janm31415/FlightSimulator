@@ -18,16 +18,17 @@
 
 #include "scene.h"
 #include "flightmodel.h"
+#include "material.h"
 
-struct Joystick 
-  {  
+struct Joystick
+  {
   float roll = 0;
   float pitch = 0;
   float yaw = 0;
   float throttle = 0;
   };
 
-view::view(int /*argc*/, char** /*argv*/) : _w(160), _h(90), _quit(false)
+view::view(int /*argc*/, char** /*argv*/) : _w(1600), _h(900), _quit(false)
   {
   // Setup window
 #if defined(RENDERDOOS_METAL)
@@ -114,7 +115,22 @@ void view::loop()
   aircraft.rigid_body.set_position(position);
   aircraft.rigid_body.set_velocity(velocity);
 
+  mesh fuselage;
+  fuselage.init_from_ply_file(_engine, "assets/models/fuselage.ply");
+
+  texture colors;
+  colors.init_from_file(_engine, "assets/textures/colors.png");
+
+  simple_material mat;
+  mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+  mat.compile(&_engine);
+
   Joystick joystick;
+
+  camera cam(physics::units::radians(45.f), (float)_w / (float)_h, 1.f, 50000.f);
+  cam.set_position(0, 1, 0);
+  cam.set_rotation(0, physics::units::radians(-90.f), 0.f);
+
 
   auto last_tic = std::chrono::high_resolution_clock::now();
   auto start = last_tic;
@@ -134,11 +150,11 @@ void view::loop()
         _quit = true;
         break;
         }
-        case SDL_KEYDOWN: 
+        case SDL_KEYDOWN:
         {
-        switch (event.key.keysym.sym) 
+        switch (event.key.keysym.sym)
           {
-          case SDLK_ESCAPE: 
+          case SDLK_ESCAPE:
           {
           _quit = true;
           break;
@@ -194,6 +210,7 @@ void view::loop()
     aircraft.engine.throttle = joystick.throttle;
 
     aircraft.update(dt);
+    //cam.set_position(-15.0f, 3.0f + aircraft.rigid_body.get_angular_velocity().z * 1.0f, 0.0f);
 
     RenderDoos::render_drawables drawables;
 #if defined(RENDERDOOS_METAL)
@@ -212,7 +229,12 @@ void view::loop()
 
     _engine.renderpass_begin(descr);
 
-
+    jtk::float4x4 view_matrix = jtk::get_identity();
+    view_matrix[14] = -20;
+    jtk::float4x4 projection_matrix = jtk::matrix_matrix_multiply(cam.get_projection_matrix(), view_matrix);
+    jtk::vec3<float> light(1,1,1);
+    mat.bind(&_engine, &projection_matrix[0], &view_matrix[0], &light.x);
+    _engine.geometry_draw(fuselage.geometry_id);
 
     _engine.renderpass_end();
     _engine.frame_end();
@@ -225,4 +247,8 @@ void view::loop()
 #endif
     last_tic = tic;
     }
+
+  mat.destroy(&_engine);
+  fuselage.cleanup(_engine);
+  colors.cleanup(_engine);
   }

@@ -125,7 +125,7 @@ void Aircraft::update(physics::seconds dt)
 
   engine.apply_forces(rigid_body);
 
-  //if ((log_timer += dt) > 0.5f)
+  if ((log_timer += dt) > 0.5f)
     {
     log_timer = 0;
 #if 1
