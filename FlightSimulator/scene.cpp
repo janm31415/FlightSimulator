@@ -6,45 +6,24 @@
 
 #include "stb/stb_image.h"
 
-jtk::float4x4 frustum(float left, float right, float bottom, float top, float near_plane, float far_plane)
-  {
-  jtk::float4x4 ret;
-  ret[0] = 2.f * near_plane / (right - left);
-  ret[1] = 0;
-  ret[2] = 0;
-  ret[3] = 0;
-  ret[4] = 0;
-  ret[5] = -2.f * near_plane / (top - bottom);
-  ret[6] = 0;
-  ret[7] = 0;
-  ret[8] = (right + left) / (right - left);
-  ret[9] = -(top + bottom) / (top - bottom);
-  ret[10] = -(far_plane + near_plane) / (far_plane - near_plane);
-  ret[11] = -1;
-  ret[12] = 0;
-  ret[13] = 0;
-  ret[14] = -(2.f * far_plane * near_plane) / (far_plane - near_plane);
-  ret[15] = 0;
-  return ret;
-  }
+#include "physics.h"
 
 jtk::float4x4 perspective(float angle, float ratio, float n, float f)
   {
   jtk::float4x4 ret;
-  float tan_half_angle = std::tan(angle / 2);
-  float sign = 1;
+  const float tan_half_angle = std::tan(angle / 2);
   ret[0] = 1 / (ratio * tan_half_angle);
   ret[1] = 0;
   ret[2] = 0;
   ret[3] = 0;
   ret[4] = 0;
-  ret[5] = sign*1 / tan_half_angle;
+  ret[5] = 1 / tan_half_angle;
   ret[6] = 0;
   ret[7] = 0;
   ret[8] = 0;
   ret[9] = 0;
   ret[10] = -(f + n) / (f - n);
-  ret[11] = sign*1;
+  ret[11] = -1;
   ret[12] = 0;
   ret[13] = 0;
   ret[14] = -(2 * f * n) / (f - n);
@@ -56,8 +35,6 @@ camera::camera(float fov, float aspect, float n, float f) :
   m_up(0, 1, 0), m_front(0, 0, 1)
   {
   m_projection = perspective(fov, aspect, n, f);
-  auto temp = frustum(-1, 1, -1, 1, n, f);
-  m_projection = temp;
   m_coordinate_system_inv = jtk::get_identity();
   m_coordinate_system = jtk::get_identity();
   }
@@ -88,17 +65,11 @@ void camera::set_position(float x, float y, float z)
   }
 
 void camera::set_rotation(float rx, float ry, float rz)
-  {
-  jtk::vec3<float> c(cos(rx)*0.5, cos(ry)*0.5, cos(rz)*0.5);
-  jtk::vec3<float> s(sin(rx)*0.5, sin(ry)*0.5, sin(rz)*0.5);
-
-  float w = c.x * c.y * c.z + s.x * s.y * s.z;
-  float x = s.x * c.y * c.z - c.x * s.y * s.z;
-  float y = c.x * s.y * c.z + s.x * c.y * s.z;
-  float z = c.x * c.y * s.z - s.x * s.y * c.z;
-
-  jtk::float4 q(x, y, z, w);
-  jtk::float4x4 rot = jtk::quaternion_to_rotation(q);
+  {  
+  jtk::float4x4 rotx = jtk::make_rotation(physics::ORIGIN, physics::X_AXIS, rx);
+  jtk::float4x4 roty = jtk::make_rotation(physics::ORIGIN, physics::Y_AXIS, ry);
+  jtk::float4x4 rotz = jtk::make_rotation(physics::ORIGIN, physics::Z_AXIS, rz);
+  jtk::float4x4 rot = jtk::matrix_matrix_multiply(jtk::matrix_matrix_multiply(rotz, roty), rotx);
   m_coordinate_system[0] = rot[0];
   m_coordinate_system[1] = rot[1];
   m_coordinate_system[2] = rot[2];

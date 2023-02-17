@@ -166,6 +166,8 @@ void view::loop()
           break;
         }
       }
+    
+    joystick.pitch = joystick.roll = joystick.yaw = 0;
 
     const uint8_t* key_states = SDL_GetKeyboardState(NULL);
     if (key_states[SDL_SCANCODE_A])
@@ -210,7 +212,7 @@ void view::loop()
     aircraft.engine.throttle = joystick.throttle;
 
     aircraft.update(dt);
-    //cam.set_position(-15.0f, 3.0f + aircraft.rigid_body.get_angular_velocity().z * 1.0f, 0.0f);
+    cam.set_position(-15.0f, 3.0f + aircraft.rigid_body.get_angular_velocity().z * 1.0f, 0.0f);
 
     RenderDoos::render_drawables drawables;
 #if defined(RENDERDOOS_METAL)
@@ -229,11 +231,11 @@ void view::loop()
 
     _engine.renderpass_begin(descr);
 
-    jtk::float4x4 view_matrix = jtk::get_identity();
-    view_matrix[14] = -20;
-    jtk::float4x4 projection_matrix = jtk::matrix_matrix_multiply(cam.get_projection_matrix(), view_matrix);
-    jtk::vec3<float> light(1,1,1);
-    mat.bind(&_engine, &projection_matrix[0], &view_matrix[0], &light.x);
+    jtk::float4x4 view_matrix = cam.get_view_matrix();
+    jtk::float4x4 projection_view_matrix = jtk::matrix_matrix_multiply(cam.get_projection_matrix(), view_matrix);
+    jtk::vec3<float> light = jtk::normalize(jtk::vec3<float>(1, 1, 1));
+    light = aircraft.rigid_body.transform_direction(light);    
+    mat.bind(&_engine, &projection_view_matrix[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(fuselage.geometry_id);
 
     _engine.renderpass_end();
