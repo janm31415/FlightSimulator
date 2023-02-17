@@ -20,6 +20,8 @@ class camera
 
     void set_position(float x, float y, float z);
     void set_rotation(float rx, float ry, float rz);
+    void set_coordinate_system(const jtk::float4x4& cs);
+    void set_up(const jtk::vec3<float>& up);
 
   private:
     jtk::float4x4 m_projection;

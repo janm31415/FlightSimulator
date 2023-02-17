@@ -52,8 +52,13 @@ jtk::float4x4 camera::get_projection_matrix() const
 void camera::look_at(const jtk::vec3<float>& target)
   {
   jtk::vec3<float> pos(m_coordinate_system[12], m_coordinate_system[13], m_coordinate_system[14]);
-  m_coordinate_system_inv = jtk::look_at(pos, target, m_up);
+  m_coordinate_system_inv = jtk::look_at(pos, target, m_up);  
   m_coordinate_system = jtk::invert_orthonormal(m_coordinate_system_inv);
+  }
+
+void camera::set_up(const jtk::vec3<float>& up)
+  {
+  m_up = up;
   }
 
 void camera::set_position(float x, float y, float z)
@@ -79,6 +84,12 @@ void camera::set_rotation(float rx, float ry, float rz)
   m_coordinate_system[8] = rot[8];
   m_coordinate_system[9] = rot[9];
   m_coordinate_system[10] = rot[10];
+  m_coordinate_system_inv = jtk::invert_orthonormal(m_coordinate_system);
+  }
+
+void camera::set_coordinate_system(const jtk::float4x4& cs)
+  {
+  m_coordinate_system = cs;
   m_coordinate_system_inv = jtk::invert_orthonormal(m_coordinate_system);
   }
 

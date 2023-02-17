@@ -201,6 +201,8 @@ namespace physics
 
       void update(seconds dt);
 
+      void get_roll_pitch_yaw(float& roll, float& pitch, float& yaw) const;
+
     private:
       jtk::vec3<float> m_force;
       jtk::vec3<float> m_torque;

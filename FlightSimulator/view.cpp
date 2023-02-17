@@ -131,6 +131,7 @@ void view::loop()
   cam.set_position(0, 1, 0);
   cam.set_rotation(0, physics::units::radians(-90.f), 0.f);
 
+  bool orbit = false;
 
   auto last_tic = std::chrono::high_resolution_clock::now();
   auto start = last_tic;
@@ -159,6 +160,11 @@ void view::loop()
           _quit = true;
           break;
           }
+          case SDLK_o:
+            cam.set_position(0, 1, 0);
+            cam.set_rotation(0, physics::units::radians(-90.f), 0.f);
+            orbit = !orbit;
+            break;
           } // switch (event.key.keysym.sym) 
         break;
         } // case SDL_KEYDOWN
@@ -166,7 +172,7 @@ void view::loop()
           break;
         }
       }
-    
+
     joystick.pitch = joystick.roll = joystick.yaw = 0;
 
     const uint8_t* key_states = SDL_GetKeyboardState(NULL);
@@ -212,7 +218,29 @@ void view::loop()
     aircraft.engine.throttle = joystick.throttle;
 
     aircraft.update(dt);
-    cam.set_position(-15.0f, 3.0f + aircraft.rigid_body.get_angular_velocity().z * 1.0f, 0.0f);
+    if (orbit)
+      {      
+      const float radius = 20.f;
+      float pitch = 0.f;
+      float yaw = 0.f;
+      const jtk::vec3<float> center(0);
+      jtk::vec3<float> front;
+      front.x = cos(yaw) * cos(pitch);
+      front.y = sin(pitch);
+      front.z = sin(yaw) * cos(pitch);
+      auto offset = jtk::normalize(front) * radius;
+      jtk::vec3<float> pos = center + offset;
+      pos = aircraft.rigid_body.inverse_transform_direction(pos);
+      cam.set_position(pos.x, pos.y, pos.z);
+      jtk::vec3<float> up(0,1,0);
+      up = aircraft.rigid_body.inverse_transform_direction(up);
+      cam.set_up(up);
+      cam.look_at(center);   
+      }
+    else
+      {
+      cam.set_position(-15.0f, 3.0f + aircraft.rigid_body.get_angular_velocity().z * 1.0f, 0.0f);
+      }
 
     RenderDoos::render_drawables drawables;
 #if defined(RENDERDOOS_METAL)
@@ -234,7 +262,7 @@ void view::loop()
     jtk::float4x4 view_matrix = cam.get_view_matrix();
     jtk::float4x4 projection_view_matrix = jtk::matrix_matrix_multiply(cam.get_projection_matrix(), view_matrix);
     jtk::vec3<float> light = jtk::normalize(jtk::vec3<float>(1, 1, 1));
-    light = aircraft.rigid_body.transform_direction(light);    
+    light = aircraft.rigid_body.transform_direction(light);
     mat.bind(&_engine, &projection_view_matrix[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(fuselage.geometry_id);
 
@@ -248,9 +276,9 @@ void view::loop()
     SDL_GL_SwapWindow(_window);
 #endif
     last_tic = tic;
-    }
+      }
 
   mat.destroy(&_engine);
   fuselage.cleanup(_engine);
   colors.cleanup(_engine);
-  }
+    }
