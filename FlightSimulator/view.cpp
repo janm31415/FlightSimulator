@@ -117,6 +117,8 @@ void view::loop()
 
   mesh fuselage;
   fuselage.init_from_ply_file(_engine, "assets/models/fuselage.ply");
+  mesh propeller;
+  propeller.init_from_ply_file(_engine, "assets/models/propeller.ply");
 
   texture colors;
   colors.init_from_file(_engine, "assets/textures/colors.png");
@@ -132,6 +134,7 @@ void view::loop()
   cam.set_rotation(0, physics::units::radians(-90.f), 0.f);
 
   bool orbit = false;
+  float propeller_rotation = 0.f;
 
   auto last_tic = std::chrono::high_resolution_clock::now();
   auto start = last_tic;
@@ -267,6 +270,17 @@ void view::loop()
     mat.bind(&_engine, &projection_view_matrix[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(fuselage.geometry_id);
 
+    propeller_rotation += 0.5f;
+    if (propeller_rotation > 2*3.1415926535)
+      propeller_rotation -= 2 * 3.1415926535;
+
+    view_matrix = cam.get_view_matrix();
+    jtk::float4x4 rot = jtk::make_rotation(physics::ORIGIN, physics::X_AXIS, propeller_rotation);
+    view_matrix = jtk::matrix_matrix_multiply(view_matrix, rot);
+    projection_view_matrix = jtk::matrix_matrix_multiply(cam.get_projection_matrix(), view_matrix);
+    mat.bind(&_engine, &projection_view_matrix[0], &view_matrix[0], &light[0]);
+    _engine.geometry_draw(propeller.geometry_id);
+
     _engine.renderpass_end();
     _engine.frame_end();
 
@@ -281,5 +295,6 @@ void view::loop()
 
   mat.destroy(&_engine);
   fuselage.cleanup(_engine);
+  propeller.cleanup(_engine);
   colors.cleanup(_engine);
     }

@@ -135,7 +135,7 @@ void mesh::init_from_ply_file(RenderDoos::render_engine& engine, const std::stri
       vp->ny = normals[i].y;
       vp->nz = normals[i].z;
       vp->u = uv_per_vertex[i].x;
-      vp->v = uv_per_vertex[i].y;
+      vp->v = 1-uv_per_vertex[i].y;
       ++vp;
       }
     for (uint32_t i = 0; i < triangles.size(); ++i)
