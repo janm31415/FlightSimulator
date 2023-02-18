@@ -142,7 +142,7 @@ void view::loop()
   cubemap_material cmat;
   cmat.compile(&_engine);
 
-  uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, false);
+  uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, true);
 
   uint32_t quad_id = _engine.add_geometry(VERTEX_STANDARD);
   RenderDoos::vertex_standard* vp;
