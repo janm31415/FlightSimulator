@@ -13,7 +13,7 @@ class material
     virtual ~material() {}
 
     virtual void compile(RenderDoos::render_engine* engine) = 0;
-    virtual void bind(RenderDoos::render_engine* engine, float* view_project, float* camera_space, float* light_dir) = 0;
+    virtual void bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* light_dir) = 0;
     virtual void destroy(RenderDoos::render_engine* engine) = 0;
   };
 
@@ -28,7 +28,7 @@ class simple_material : public material
     void set_ambient(float a);
 
     virtual void compile(RenderDoos::render_engine* engine);
-    virtual void bind(RenderDoos::render_engine* engine, float* view_project, float* camera_space, float* light_dir);
+    virtual void bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* light_dir);
     virtual void destroy(RenderDoos::render_engine* engine);
 
   private:
@@ -39,4 +39,24 @@ class simple_material : public material
     float ambient;
     int32_t texture_flags;
     int32_t vp_handle, cam_handle, light_dir_handle, tex_sample_handle, ambient_handle, color_handle, tex0_handle; // uniforms
+  };
+
+class cubemap_material : public material
+  {
+  public:
+    cubemap_material();
+    virtual ~cubemap_material();
+
+    void set_cubemap(int32_t handle, int32_t flags);
+
+    virtual void compile(RenderDoos::render_engine* engine);
+    virtual void bind(RenderDoos::render_engine* engine, float* view_project, float* camera_space, float* light_dir);
+    virtual void destroy(RenderDoos::render_engine* engine);
+
+  private:
+    int32_t vs_handle, fs_handle;
+    int32_t shader_program_handle;
+    int32_t tex_handle;
+    int32_t texture_flags;
+    int32_t projection_handle, cam_handle, tex0_handle; // uniforms
   };

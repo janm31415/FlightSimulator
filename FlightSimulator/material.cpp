@@ -12,7 +12,7 @@ static std::string get_simple_material_vertex_shader()
 layout (location = 0) in vec3 vPosition;
 layout (location = 1) in vec3 vNormal;
 layout (location = 2) in vec2 vTexCoord;
-uniform mat4 ViewProject; // columns
+uniform mat4 Projection; // columns
 uniform mat4 Camera; // columns
 
 out vec3 Normal;
@@ -20,7 +20,7 @@ out vec2 TexCoord;
 
 void main() 
   {
-  gl_Position = ViewProject*vec4(vPosition.xyz,1);
+  gl_Position = Projection*Camera*vec4(vPosition.xyz,1);
   Normal = (Camera*vec4(vNormal,0)).xyz;
   TexCoord = vTexCoord;
   }
@@ -122,7 +122,7 @@ void simple_material::compile(RenderDoos::render_engine* engine)
     }
   dummy_tex_handle = engine->add_texture(1, 1, texture_format_rgba8, (const uint16_t*)nullptr);
   shader_program_handle = engine->add_program(vs_handle, fs_handle);
-  vp_handle = engine->add_uniform("ViewProject", uniform_type::mat4, 1);
+  vp_handle = engine->add_uniform("Projection", uniform_type::mat4, 1);
   cam_handle = engine->add_uniform("Camera", uniform_type::mat4, 1);
   light_dir_handle = engine->add_uniform("LightDir", uniform_type::vec3, 1);
   tex_sample_handle = engine->add_uniform("TextureSample", uniform_type::integer, 1);
@@ -131,13 +131,13 @@ void simple_material::compile(RenderDoos::render_engine* engine)
   tex0_handle = engine->add_uniform("Tex0", uniform_type::sampler, 1);
   }
 
-void simple_material::bind(RenderDoos::render_engine* engine, float* view_project, float* camera_space, float* light_dir)
+void simple_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* light_dir)
   {
   using namespace RenderDoos;
 
   engine->bind_program(shader_program_handle);
 
-  engine->set_uniform(vp_handle, (void*)view_project);
+  engine->set_uniform(vp_handle, (void*)projection);
   engine->set_uniform(cam_handle, (void*)camera_space);
   engine->set_uniform(light_dir_handle, (void*)light_dir);
   int32_t tex_sample = tex_handle >= 0 ? 1 : 0;
@@ -167,4 +167,118 @@ void simple_material::bind(RenderDoos::render_engine* engine, float* view_projec
     {
     engine->bind_texture_to_channel(dummy_tex_handle, 0, texture_flags);
     }
+  }
+
+
+static std::string get_cubemap_material_vertex_shader()
+  {
+  return std::string(R"(#version 330 core
+layout (location = 0) in vec3 vPosition;
+
+uniform mat4 Projection; // columns
+uniform mat4 Camera; // columns
+
+out vec3 localPos;
+
+void main()
+{
+    localPos = vPosition;
+    mat4 rotView = mat4(mat3(Camera)); // remove translation from the view matrix
+    vec4 clipPos = Projection * rotView * vec4(localPos, 1.0);
+
+    gl_Position = clipPos;
+    //gl_Position.y = -gl_Position.y;
+}
+)");
+  }
+
+static std::string get_cubemap_material_fragment_shader()
+  {
+  return std::string(R"(#version 330 core
+out vec4 FragColor;
+
+in vec3 localPos;
+  
+uniform samplerCube environmentMap;
+//uniform sampler2D environmentMap;
+  
+void main()
+{
+    vec3 envColor = texture(environmentMap, localPos).rgb;
+    
+    //envColor = envColor / (envColor + vec3(1.0));
+    //envColor = pow(envColor, vec3(1.0/2.2)); 
+  
+    FragColor = vec4(envColor, 1.0);
+}
+)");
+  }
+
+cubemap_material::cubemap_material()
+  {
+  vs_handle = -1;
+  fs_handle = -1;
+  shader_program_handle = -1;
+  tex_handle = -1;
+  projection_handle = -1;
+  cam_handle = -1;
+  tex0_handle = -1;
+  }
+
+cubemap_material::~cubemap_material()
+  {
+  }
+
+void cubemap_material::set_cubemap(int32_t handle, int32_t flags)
+  {
+  if (handle >= 0 && handle < MAX_TEXTURE)
+    tex_handle = handle;
+  else
+    tex_handle = -1;
+  texture_flags = flags;
+  }
+
+void cubemap_material::destroy(RenderDoos::render_engine* engine)
+  {
+  engine->remove_program(shader_program_handle);
+  engine->remove_shader(vs_handle);
+  engine->remove_shader(fs_handle);
+  engine->remove_texture(tex_handle);
+  engine->remove_uniform(projection_handle);
+  engine->remove_uniform(cam_handle);
+  engine->remove_uniform(tex0_handle);
+  }
+
+void cubemap_material::compile(RenderDoos::render_engine* engine)
+  {
+  using namespace RenderDoos;
+  if (engine->get_renderer_type() == renderer_type::METAL)
+    {
+    vs_handle = engine->add_shader(nullptr, SHADER_VERTEX, "cubemap_material_vertex_shader");
+    fs_handle = engine->add_shader(nullptr, SHADER_FRAGMENT, "cubemap_material_fragment_shader");
+    }
+  else if (engine->get_renderer_type() == renderer_type::OPENGL)
+    {
+    vs_handle = engine->add_shader(get_cubemap_material_vertex_shader().c_str(), SHADER_VERTEX, nullptr);
+    fs_handle = engine->add_shader(get_cubemap_material_fragment_shader().c_str(), SHADER_FRAGMENT, nullptr);
+    }
+  shader_program_handle = engine->add_program(vs_handle, fs_handle);
+  projection_handle = engine->add_uniform("Projection", uniform_type::mat4, 1);
+  cam_handle = engine->add_uniform("Camera", uniform_type::mat4, 1);
+  tex0_handle = engine->add_uniform("environmentMap", uniform_type::sampler, 1);
+  }
+
+void cubemap_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* light_dir)
+  {
+  engine->bind_program(shader_program_handle);
+
+  engine->set_uniform(projection_handle, (void*)projection);
+  engine->set_uniform(cam_handle, (void*)camera_space);
+  int32_t tex_0 = 0;
+  engine->set_uniform(tex0_handle, (void*)&tex_0);
+
+  engine->bind_uniform(shader_program_handle, projection_handle);
+  engine->bind_uniform(shader_program_handle, cam_handle);
+  engine->bind_uniform(shader_program_handle, tex0_handle);
+  engine->bind_texture_to_channel(tex_handle, 0, texture_flags);
   }

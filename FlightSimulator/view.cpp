@@ -329,11 +329,10 @@ void view::loop()
     _engine.renderpass_begin(descr);
 
     jtk::float4x4 view_matrix = cam.get_view_matrix();
-    jtk::float4x4 projection_view_matrix = jtk::matrix_matrix_multiply(cam.get_projection_matrix(), view_matrix);
     jtk::vec3<float> light = jtk::normalize(jtk::vec3<float>(1, 1, 1));
     light = aircraft.rigid_body.inverse_transform_direction(light);
     light = physics::utils::transform_vector(view_matrix, light);
-    mat.bind(&_engine, &projection_view_matrix[0], &view_matrix[0], &light[0]);
+    mat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(fuselage.geometry_id);
     _engine.renderpass_end();
     
@@ -346,8 +345,7 @@ void view::loop()
     view_matrix = cam.get_view_matrix();
     jtk::float4x4 rot = jtk::make_rotation(physics::ORIGIN, physics::X_AXIS, propeller_rotation);
     view_matrix = jtk::matrix_matrix_multiply(view_matrix, rot);
-    projection_view_matrix = jtk::matrix_matrix_multiply(cam.get_projection_matrix(), view_matrix);
-    mat.bind(&_engine, &projection_view_matrix[0], &view_matrix[0], &light[0]);
+    mat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(propeller.geometry_id);
 
     _engine.renderpass_end();
