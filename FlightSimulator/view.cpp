@@ -183,8 +183,11 @@ void view::loop()
 
   _engine.geometry_end(quad_id);
   
+#if defined(RENDERDOOS_METAL)
+  RenderDoos::float4x4 projection_ortho = RenderDoos::orthographic(-1, 1, 1, -1, -1, 1);
+#else
   RenderDoos::float4x4 projection_ortho = RenderDoos::orthographic(-1, 1, -1, 1, -1, 1);
-  
+#endif
   Joystick joystick;
 
   camera cam(physics::units::radians(45.f), (float)_w / (float)_h, 1.f, 50000.f);
@@ -319,6 +322,7 @@ void view::loop()
     descr.h = _h;
     descr.frame_buffer_handle = framebuffer_id;
     descr.frame_buffer_channel = 10;
+    descr.clear_depth = 1;
 
     mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
 
