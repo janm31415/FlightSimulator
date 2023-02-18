@@ -353,8 +353,7 @@ void view::loop()
     jtk::set_x_axis(view_matrix, xa);
     jtk::set_y_axis(view_matrix, ya);
     jtk::set_z_axis(view_matrix, za);
-    jtk::float4x4 roty = jtk::make_rotation(physics::ORIGIN, physics::Y_AXIS, physics::units::degrees(-90.f));
-    view_matrix = jtk::matrix_matrix_multiply(roty, view_matrix);
+    view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);
     jtk::vec3<float> light(0);
     cmat.set_cubemap(skybox.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
     cmat.bind(&_engine, &projection_skybox[0], &view_matrix[0], &light[0]);
