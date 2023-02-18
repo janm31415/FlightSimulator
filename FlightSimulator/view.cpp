@@ -20,6 +20,8 @@
 #include "flightmodel.h"
 #include "material.h"
 
+#include "RenderDoos/types.h"
+
 struct Joystick
   {
   float roll = 0;
@@ -126,7 +128,63 @@ void view::loop()
   simple_material mat;
   mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
   mat.compile(&_engine);
+  
+  uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, true);
+  
+  uint32_t quad_id = _engine.add_geometry(VERTEX_STANDARD);
+  RenderDoos::vertex_standard* vp;
+  uint32_t* ip;
+  
+  _engine.geometry_begin(quad_id, 4, 6, (float**)&vp, (void**)&ip);
+  // make a quad for drawing the texture
 
+  vp->x = -1.f;
+  vp->y = -1.f;
+  vp->z = 0.f;
+  vp->nx = 0.f;
+  vp->ny = 0.f;
+  vp->nz = 1.f;
+  vp->u = 0.f;
+  vp->v = 0.f;
+  ++vp;
+  vp->x = 1.f;
+  vp->y = -1.f;
+  vp->z = 0.f;
+  vp->nx = 0.f;
+  vp->ny = 0.f;
+  vp->nz = 1.f;
+  vp->u = 1.f;
+  vp->v = 0.f;
+  ++vp;
+  vp->x = 1.f;
+  vp->y = 1.f;
+  vp->z = 0.f;
+  vp->nx = 0.f;
+  vp->ny = 0.f;
+  vp->nz = 1.f;
+  vp->u = 1.f;
+  vp->v = 1.f;
+  ++vp;
+  vp->x = -1.f;
+  vp->y = 1.f;
+  vp->z = 0.f;
+  vp->nx = 0.f;
+  vp->ny = 0.f;
+  vp->nz = 1.f;
+  vp->u = 0.f;
+  vp->v = 1.f;
+
+  ip[0] = 0;
+  ip[1] = 1;
+  ip[2] = 2;
+  ip[3] = 0;
+  ip[4] = 2;
+  ip[5] = 3;
+
+  _engine.geometry_end(quad_id);
+  
+  
+  
   Joystick joystick;
 
   camera cam(physics::units::radians(45.f), (float)_w / (float)_h, 1.f, 50000.f);
@@ -259,6 +317,8 @@ void view::loop()
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
     descr.w = _w;
     descr.h = _h;
+    descr.frame_buffer_handle = framebuffer_id;
+    descr.frame_buffer_channel = 10;
 
     _engine.renderpass_begin(descr);
 
@@ -269,7 +329,10 @@ void view::loop()
     light = physics::utils::transform_vector(view_matrix, light);
     mat.bind(&_engine, &projection_view_matrix[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(fuselage.geometry_id);
-
+    _engine.renderpass_end();
+    
+    descr.clear_flags = 0;
+    _engine.renderpass_begin(descr);
     propeller_rotation += 0.5f;
     if (propeller_rotation > 2.f * 3.1415926535f)
       propeller_rotation -= 2.f * 3.1415926535f;
@@ -282,6 +345,21 @@ void view::loop()
     _engine.geometry_draw(propeller.geometry_id);
 
     _engine.renderpass_end();
+    
+    descr.frame_buffer_handle = -1;
+    descr.clear_color = 0xff00ffff;
+    descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
+
+    _engine.renderpass_begin(descr);
+
+    mat.set_texture(_engine.get_frame_buffer(framebuffer_id)->texture_handle, TEX_WRAP_REPEAT | TEX_FILTER_NEAREST);
+    view_matrix = jtk::get_identity();
+    mat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
+    _engine.geometry_draw(quad_id);
+
+    _engine.renderpass_end();
+    _engine.frame_end();
+    
     _engine.frame_end();
 
 
