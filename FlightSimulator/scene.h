@@ -8,6 +8,8 @@ namespace RenderDoos
   class render_engine;
   }
 
+jtk::float4x4 perspective(float angle, float ratio, float n, float f);
+
 class camera
   {
   public:
@@ -55,4 +57,23 @@ struct texture
 
   int32_t texture_id;
   unsigned char* im;
+  };
+
+struct cubemap
+  {
+  cubemap();
+  ~cubemap();
+
+  void init_from_file(RenderDoos::render_engine& engine, 
+    const std::string& front,
+    const std::string& back,
+    const std::string& left,
+    const std::string& right,
+    const std::string& top,
+    const std::string& bottom
+    );
+  void cleanup(RenderDoos::render_engine& engine);
+
+  int32_t texture_id;
+  int32_t geometry_id;
   };

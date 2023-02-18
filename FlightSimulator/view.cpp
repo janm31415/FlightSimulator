@@ -126,15 +126,28 @@ void view::loop()
   texture colors;
   colors.init_from_file(_engine, "assets/textures/colors.png");
 
-  simple_material mat;  
+  cubemap skybox;
+  skybox.init_from_file(_engine,
+    "assets/textures/skybox/front.jpg",
+    "assets/textures/skybox/back.jpg",
+    "assets/textures/skybox/left.jpg",
+    "assets/textures/skybox/right.jpg",
+    "assets/textures/skybox/top.jpg",
+    "assets/textures/skybox/bottom.jpg"
+  );
+
+  simple_material mat;
   mat.compile(&_engine);
-  
-  uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, true);
-  
+
+  cubemap_material cmat;
+  cmat.compile(&_engine);
+
+  uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, false);
+
   uint32_t quad_id = _engine.add_geometry(VERTEX_STANDARD);
   RenderDoos::vertex_standard* vp;
   uint32_t* ip;
-  
+
   _engine.geometry_begin(quad_id, 4, 6, (float**)&vp, (void**)&ip);
   // make a quad for drawing the texture
 
@@ -182,12 +195,15 @@ void view::loop()
   ip[5] = 3;
 
   _engine.geometry_end(quad_id);
-  
+
 #if defined(RENDERDOOS_METAL)
-  RenderDoos::float4x4 projection_ortho = RenderDoos::orthographic(-1, 1, 1, -1, -1, 1);
+  RenderDoos::float4x4 projection_ortho = RenderDoos::orthographic(-1, 1, 1, -1, 0, 1);
 #else
-  RenderDoos::float4x4 projection_ortho = RenderDoos::orthographic(-1, 1, -1, 1, -1, 1);
+  RenderDoos::float4x4 projection_ortho = RenderDoos::orthographic(-1, 1, -1, 1, 0, 1);
 #endif
+
+  jtk::float4x4 projection_skybox = perspective(physics::units::radians(45.f), (float)_w / (float)_h, 0.125f, 4096.f);
+
   Joystick joystick;
 
   camera cam(physics::units::radians(45.f), (float)_w / (float)_h, 1.f, 50000.f);
@@ -327,15 +343,34 @@ void view::loop()
     mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
 
     _engine.renderpass_begin(descr);
+    jtk::float4x4 view_matrix = jtk::get_identity();
+    jtk::vec3<float> xa(1, 0, 0);
+    jtk::vec3<float> ya(0, 1, 0);
+    jtk::vec3<float> za(0, 0, 1);
+    xa = aircraft.rigid_body.inverse_transform_direction(xa);
+    ya = aircraft.rigid_body.inverse_transform_direction(ya);
+    za = aircraft.rigid_body.inverse_transform_direction(za);
+    jtk::set_x_axis(view_matrix, xa);
+    jtk::set_y_axis(view_matrix, ya);
+    jtk::set_z_axis(view_matrix, za);
+    jtk::float4x4 roty = jtk::make_rotation(physics::ORIGIN, physics::Y_AXIS, physics::units::degrees(-90.f));
+    view_matrix = jtk::matrix_matrix_multiply(roty, view_matrix);
+    jtk::vec3<float> light(0);
+    cmat.set_cubemap(skybox.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+    cmat.bind(&_engine, &projection_skybox[0], &view_matrix[0], &light[0]);
+    _engine.geometry_draw(skybox.geometry_id);
+    _engine.renderpass_end();
 
-    jtk::float4x4 view_matrix = cam.get_view_matrix();
-    jtk::vec3<float> light = jtk::normalize(jtk::vec3<float>(1, 1, 1));
+    descr.clear_flags = CLEAR_DEPTH;
+    _engine.renderpass_begin(descr);
+    view_matrix = cam.get_view_matrix();
+    light = jtk::normalize(jtk::vec3<float>(0, 1, 0));
     light = aircraft.rigid_body.inverse_transform_direction(light);
     light = physics::utils::transform_vector(view_matrix, light);
     mat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(fuselage.geometry_id);
     _engine.renderpass_end();
-    
+
     descr.clear_flags = 0;
     _engine.renderpass_begin(descr);
     propeller_rotation += 0.5f;
@@ -349,7 +384,7 @@ void view::loop()
     _engine.geometry_draw(propeller.geometry_id);
 
     _engine.renderpass_end();
-    
+
     descr.frame_buffer_handle = -1;
     descr.clear_color = 0xff00ffff;
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
@@ -358,7 +393,7 @@ void view::loop()
 
     mat.set_texture(_engine.get_frame_buffer(framebuffer_id)->texture_handle, TEX_WRAP_REPEAT | TEX_FILTER_NEAREST);
     view_matrix = jtk::get_identity();
-    light = jtk::vec3<float>(0,0,1);
+    light = jtk::vec3<float>(0, 0, 1);
     mat.bind(&_engine, &projection_ortho[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(quad_id);
 
@@ -375,6 +410,8 @@ void view::loop()
     }
 
   mat.destroy(&_engine);
+  cmat.destroy(&_engine);
+  skybox.cleanup(_engine);
   fuselage.cleanup(_engine);
   propeller.cleanup(_engine);
   colors.cleanup(_engine);

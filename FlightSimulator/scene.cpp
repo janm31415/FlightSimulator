@@ -169,3 +169,119 @@ void texture::cleanup(RenderDoos::render_engine& engine)
   {
   engine.remove_texture(texture_id);
   }
+
+cubemap::cubemap()
+  {
+  }
+
+cubemap::~cubemap()
+  {
+  }
+
+void cubemap::init_from_file(RenderDoos::render_engine& engine,
+  const std::string& front,
+  const std::string& back,
+  const std::string& left,
+  const std::string& right,
+  const std::string& top,
+  const std::string& bottom
+)
+  {
+  int w, h, nr_of_channels;
+  unsigned char* im_front = stbi_load(front.c_str(), &w, &h, &nr_of_channels, 4);
+  unsigned char* im_back = stbi_load(back.c_str(), &w, &h, &nr_of_channels, 4);
+  unsigned char* im_left = stbi_load(left.c_str(), &w, &h, &nr_of_channels, 4);
+  unsigned char* im_right = stbi_load(right.c_str(), &w, &h, &nr_of_channels, 4);
+  unsigned char* im_top = stbi_load(top.c_str(), &w, &h, &nr_of_channels, 4);
+  unsigned char* im_bottom = stbi_load(bottom.c_str(), &w, &h, &nr_of_channels, 4);
+  texture_id = engine.add_cubemap_texture(w, h, RenderDoos::texture_format_rgba8,
+    (const uint8_t*)im_front,
+    (const uint8_t*)im_back,
+    (const uint8_t*)im_left,
+    (const uint8_t*)im_right,
+    (const uint8_t*)im_top,
+    (const uint8_t*)im_bottom
+  );
+  stbi_image_free(im_front);
+  stbi_image_free(im_back);
+  stbi_image_free(im_left);
+  stbi_image_free(im_right);
+  stbi_image_free(im_top);
+  stbi_image_free(im_bottom);
+
+  geometry_id = engine.add_geometry(VERTEX_STANDARD);
+
+  RenderDoos::vertex_standard* vp;
+  uint32_t* ip;
+
+  engine.geometry_begin(geometry_id, 36, 36, (float**)&vp, (void**)&ip);
+  // drawing
+  float vertices[] = {
+    // back face
+    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+     1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+    -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+    // front face
+    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+     1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+    -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+    // left face
+    -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+    -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+    -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+    -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+    -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+    -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+    // right face
+     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+     1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+     1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+    // bottom face
+    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+     1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+    -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+    // top face
+    -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+     1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+     1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+     1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+    -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+    -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+    };
+  for (int ii = 0; ii < 36; ii++)
+    {
+    vp->x = vertices[ii * 8 + 0];
+    vp->y = vertices[ii * 8 + 1];
+    vp->z = vertices[ii * 8 + 2];
+    vp->nx = vertices[ii * 8 + 3];
+    vp->ny = vertices[ii * 8 + 4];
+    vp->nz = vertices[ii * 8 + 5];
+    vp->u = vertices[ii * 8 + 6];
+    vp->v = vertices[ii * 8 + 7];
+    vp++;
+    }
+  for (int ii = 0; ii < 36; ii++)
+    {
+    ip[ii] = ii;
+    }
+
+  engine.geometry_end(geometry_id);
+  }
+
+void cubemap::cleanup(RenderDoos::render_engine& engine)
+  {
+  engine.remove_texture(texture_id);
+  engine.remove_geometry(geometry_id);
+  }

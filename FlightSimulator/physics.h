@@ -203,6 +203,8 @@ namespace physics
 
       void get_roll_pitch_yaw(float& roll, float& pitch, float& yaw) const;
 
+      jtk::float4x4 get_coordinate_system() const;
+
     private:
       jtk::vec3<float> m_force;
       jtk::vec3<float> m_torque;
