@@ -53,7 +53,11 @@ vertex CubemapVertexOut cubemap_material_vertex_shader(const device VertexIn *ve
   CubemapVertexOut out;
   out.localpos = vertices[vertexId].position;
   float4 pos(vertices[vertexId].position, 1);
-  out.position = input.projection_matrix * input.camera_matrix * pos;
+  float4x4 rotView = input.camera_matrix;
+  rotView.columns[3][0] = 0;
+  rotView.columns[3][1] = 0;
+  rotView.columns[3][2] = 0;
+  out.position = input.projection_matrix * rotView * pos;
   return out;
 }
 
