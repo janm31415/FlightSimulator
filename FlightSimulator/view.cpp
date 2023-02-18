@@ -222,7 +222,7 @@ void view::loop()
 
     aircraft.update(dt);
     if (orbit)
-      {      
+      {
       const float radius = 20.f;
       float pitch = 0.f;
       float yaw = 0.f;
@@ -235,10 +235,10 @@ void view::loop()
       jtk::vec3<float> pos = center + offset;
       pos = aircraft.rigid_body.inverse_transform_direction(pos);
       cam.set_position(pos.x, pos.y, pos.z);
-      jtk::vec3<float> up(0,1,0);
+      jtk::vec3<float> up(0, 1, 0);
       up = aircraft.rigid_body.inverse_transform_direction(up);
       cam.set_up(up);
-      cam.look_at(center);   
+      cam.look_at(center);
       }
     else
       {
@@ -271,8 +271,8 @@ void view::loop()
     _engine.geometry_draw(fuselage.geometry_id);
 
     propeller_rotation += 0.5f;
-    if (propeller_rotation > 2*3.1415926535)
-      propeller_rotation -= 2 * 3.1415926535;
+    if (propeller_rotation > 2.f * 3.1415926535f)
+      propeller_rotation -= 2.f * 3.1415926535f;
 
     view_matrix = cam.get_view_matrix();
     jtk::float4x4 rot = jtk::make_rotation(physics::ORIGIN, physics::X_AXIS, propeller_rotation);
@@ -291,10 +291,10 @@ void view::loop()
     SDL_GL_SwapWindow(_window);
 #endif
     last_tic = tic;
-      }
+    }
 
   mat.destroy(&_engine);
   fuselage.cleanup(_engine);
   propeller.cleanup(_engine);
   colors.cleanup(_engine);
-    }
+  }
