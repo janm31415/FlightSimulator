@@ -21,6 +21,7 @@
 #include "material.h"
 
 #include "RenderDoos/types.h"
+#include "RenderDoos/float.h"
 
 struct Joystick
   {
@@ -125,8 +126,7 @@ void view::loop()
   texture colors;
   colors.init_from_file(_engine, "assets/textures/colors.png");
 
-  simple_material mat;
-  mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+  simple_material mat;  
   mat.compile(&_engine);
   
   uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, true);
@@ -183,7 +183,7 @@ void view::loop()
 
   _engine.geometry_end(quad_id);
   
-  
+  RenderDoos::float4x4 projection_ortho = RenderDoos::orthographic(-1, 1, -1, 1, -1, 1);
   
   Joystick joystick;
 
@@ -320,6 +320,8 @@ void view::loop()
     descr.frame_buffer_handle = framebuffer_id;
     descr.frame_buffer_channel = 10;
 
+    mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+
     _engine.renderpass_begin(descr);
 
     jtk::float4x4 view_matrix = cam.get_view_matrix();
@@ -354,12 +356,11 @@ void view::loop()
 
     mat.set_texture(_engine.get_frame_buffer(framebuffer_id)->texture_handle, TEX_WRAP_REPEAT | TEX_FILTER_NEAREST);
     view_matrix = jtk::get_identity();
-    mat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
+    light = jtk::vec3<float>(0,0,1);
+    mat.bind(&_engine, &projection_ortho[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(quad_id);
 
     _engine.renderpass_end();
-    _engine.frame_end();
-    
     _engine.frame_end();
 
 
