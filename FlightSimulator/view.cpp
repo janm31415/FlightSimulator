@@ -154,6 +154,7 @@ void view::loop()
   cubemap_material cmat;
   cmat.compile(&_engine);
 
+#ifdef TERRAIN
   terrain_material tmat;
   texture heightmap, normalmap, colormap;
   heightmap.init_from_file(_engine, "assets/textures/terrain/heightmap.png");
@@ -167,11 +168,11 @@ void view::loop()
 
   blit_material bmat;
   bmat.compile(&_engine);
-
+#endif
   uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, true);
-
+#ifdef TERRAIN
   uint32_t framebuffer_heightmap_id = _engine.add_frame_buffer(tmat.get_resolution_width(), tmat.get_resolution_height(), false);
-
+#endif
   uint32_t quad_id = _engine.add_geometry(VERTEX_STANDARD);
   RenderDoos::vertex_standard* vp;
   uint32_t* ip;
@@ -358,6 +359,13 @@ void view::loop()
     drawables.metal_screen_texture = (void*)drawable->texture();
 #endif
 
+
+    jtk::vec3<float> xa(1, 0, 0);
+    jtk::vec3<float> ya(0, 1, 0);
+    jtk::vec3<float> za(0, 0, 1);
+    jtk::float4x4 view_matrix = jtk::get_identity();
+    jtk::vec3<float> light(0);
+    
     //////////////////////
     /// Terrain pass
     //////////////////////
@@ -366,23 +374,24 @@ void view::loop()
     RenderDoos::renderpass_descriptor descr;
     descr.clear_color = 0xff203040;
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
+    
+#ifdef TERRAIN
     descr.w = tmat.get_resolution_width();
     descr.h = tmat.get_resolution_height();
     descr.frame_buffer_handle = framebuffer_heightmap_id;
     descr.frame_buffer_channel = 10;
     descr.clear_depth = 1;
     _engine.renderpass_begin(descr);
-    jtk::float4x4 view_matrix = jtk::get_identity();
-    jtk::vec3<float> xa(1, 0, 0);
-    jtk::vec3<float> ya(0, 1, 0);
-    jtk::vec3<float> za(0, 0, 1);
+    view_matrix = jtk::get_identity();
+    xa = jtk::vec3<float>(1, 0, 0);
+    ya = jtk::vec3<float>(0, 1, 0);
+    za = jtk::vec3<float>(0, 0, 1);
     xa = aircraft.rigid_body.transform_direction(xa);
     ya = aircraft.rigid_body.transform_direction(ya);
     za = aircraft.rigid_body.transform_direction(za);
     jtk::set_x_axis(view_matrix, xa);
     jtk::set_y_axis(view_matrix, ya);
     jtk::set_z_axis(view_matrix, za);
-    jtk::vec3<float> light(0);
 
     //view_matrix = jtk::invert_orthonormal(view_matrix);
     //jtk::float4x4 roty = jtk::make_rotation(physics::ORIGIN, physics::Y_AXIS, physics::radians(-90.f));
@@ -397,7 +406,7 @@ void view::loop()
     _engine.geometry_draw(skybox.geometry_id);
 
     _engine.renderpass_end();
-
+#endif
     //////////////////////
     /// Skybox pass
     //////////////////////
@@ -507,11 +516,13 @@ void view::loop()
 
   mat.destroy(&_engine);
   cmat.destroy(&_engine);
+  #ifdef TERRAIN
   tmat.destroy(&_engine);
   bmat.destroy(&_engine);
   heightmap.cleanup(_engine);
   normalmap.cleanup(_engine);
   colormap.cleanup(_engine);
+  #endif
   skybox.cleanup(_engine);
   fuselage.cleanup(_engine);
   propeller.cleanup(_engine);
