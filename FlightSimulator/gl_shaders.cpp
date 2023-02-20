@@ -132,12 +132,12 @@ float map( in vec3 p )
     return p.y - terrain(p.xz);
 }
 
-vec3 getColor( in vec3 pos )
+vec4 getColor( in vec3 pos )
 {
   vec2 p = scalePosition(pos.xz);
   if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
-    return vec3(0,0,0);
-  return texture( Colormap, p).rgb;
+    return vec4(0,0,0,0);
+  return texture( Colormap, p);
 }
 
 vec3 calcNormal( in vec3 pos, float t )
@@ -212,13 +212,21 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 		// Get some information about our intersection
 		vec3 pos = ro + t * rd;
 		vec3 normal = calcNormal(pos, t);       	
-		
-		vec3 texCol = vec3(pow(getColor(pos), vec3(0.5)));
-		
-    vec3 sunDir = normalize(vec3(0, +0.5, -1));
 
-    vec3 col = texCol * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.9 + texCol*0.1;
-    fragColor = vec4(pow(col*2.0, vec3(2.2)), 1.0);
+    vec4 texCol = getColor(pos);
+    if (texCol.a > 0)
+      {		
+		  vec3 col = vec3(pow(texCol.rgb, vec3(0.5)));
+		
+      vec3 sunDir = normalize(vec3(0, +0.5, -1));
+
+      col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.9 + col*0.1;
+      fragColor = vec4(pow(col*2.0, vec3(2.2)), 1.0);
+      }
+    else
+      {
+      fragColor = vec4(0);
+      }
 	  }	
   else
     {

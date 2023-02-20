@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <chrono>
 
+#define TERRAIN
+
 #if defined(RENDERDOOS_METAL)
 #define NS_PRIVATE_IMPLEMENTATION
 #define CA_PRIVATE_IMPLEMENTATION
@@ -376,6 +378,8 @@ void view::loop()
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
     
 #ifdef TERRAIN
+    descr.clear_color = 0xff203040;
+    descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
     descr.w = tmat.get_resolution_width();
     descr.h = tmat.get_resolution_height();
     descr.frame_buffer_handle = framebuffer_heightmap_id;
@@ -402,8 +406,9 @@ void view::loop()
     view_matrix[12] = aircraft.rigid_body.get_position().x*scale;
     view_matrix[13] = aircraft.rigid_body.get_position().y*scale;
     view_matrix[14] = aircraft.rigid_body.get_position().z*scale;
-    tmat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
-    _engine.geometry_draw(skybox.geometry_id);
+    //tmat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
+    tmat.bind(&_engine, &projection_ortho[0], &view_matrix[0], &light[0]);
+    _engine.geometry_draw(quad_id);
 
     _engine.renderpass_end();
 #endif
@@ -434,13 +439,13 @@ void view::loop()
     cmat.bind(&_engine, &projection_skybox[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(skybox.geometry_id);
     _engine.renderpass_end();
-    /*
+    
     //////////////////////
     /// Blit terrain pass
     //////////////////////
 
     descr.frame_buffer_handle = framebuffer_id;    
-    descr.clear_flags = 0;
+    descr.clear_flags = CLEAR_DEPTH;
 
     _engine.renderpass_begin(descr);
 
@@ -451,7 +456,7 @@ void view::loop()
     _engine.geometry_draw(quad_id);
 
     _engine.renderpass_end();
-    */
+    
     //////////////////////
     /// Aircraft pass
     //////////////////////
