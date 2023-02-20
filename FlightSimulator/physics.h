@@ -20,10 +20,10 @@ namespace physics
   // directions in body space
   const jtk::vec3<float> UP(0.0f, 1.0f, 0.0f);
   const jtk::vec3<float> DOWN(0.0f, -1.0f, 0.0f);
-  const jtk::vec3<float> RIGHT(0.0f, 0.0f, 1.0f);
-  const jtk::vec3<float> LEFT(0.0f, 0.0f, -1.0f);
-  const jtk::vec3<float> FORWARD(1.0f, 0.0f, 0.0f);
-  const jtk::vec3<float> BACKWARD(-1.0f, 0.0f, 0.0f);
+  const jtk::vec3<float> RIGHT(1.0f, 0.0f, 0.0f);
+  const jtk::vec3<float> LEFT(-1.0f, 0.0f, 0.0f);
+  const jtk::vec3<float> FORWARD(0.0f, 0.0f, 1.0f);
+  const jtk::vec3<float> BACKWARD(0.0f, 0.0f, -1.0f);
 
   const jtk::vec3<float> ORIGIN(0.0f, 0.0f, 0.0f);
   const jtk::vec3<float> X_AXIS(1.0f, 0.0f, 0.0f);

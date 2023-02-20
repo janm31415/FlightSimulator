@@ -36,7 +36,7 @@ struct mesh
   mesh();
   ~mesh();
 
-  void init_from_ply_file(RenderDoos::render_engine& engine, const std::string& filename);
+  void init_from_ply_file(RenderDoos::render_engine& engine, const std::string& filename, float rx, float ry, float rz);
   void cleanup(RenderDoos::render_engine& engine);
 
   std::vector<jtk::vec3<float>> vertices;

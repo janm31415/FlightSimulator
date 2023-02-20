@@ -31,7 +31,7 @@ Engine::Engine(float thrust) : thrust(thrust)
 void Engine::apply_forces(physics::RigidBody& rigid_body)
   {
   float force = thrust * throttle;
-  rigid_body.add_relative_force({ force, 0.0f, 0.0f });
+  rigid_body.add_relative_force({ 0.0f, 0.0f, force });
   }
 
 Wing::Wing(const jtk::vec3<float>& position, float area, const Airfoil* aero, const jtk::vec3<float>& normal)
@@ -106,10 +106,10 @@ void Aircraft::update(physics::seconds dt)
   Wing& ra = elements[2];
   Wing& el = elements[4];
   Wing& ru = elements[5];
-
-  float roll = joystick.x;
-  float yaw = joystick.y;
-  float pitch = joystick.z;
+  
+  float pitch = joystick.x;
+  float yaw = joystick.y;  
+  float roll = joystick.z;
   float max_elevator_deflection = 5.0f, max_aileron_deflection = 15.0f, max_rudder_deflection = 5.0f;
   float aileron_deflection = roll * max_aileron_deflection;
 

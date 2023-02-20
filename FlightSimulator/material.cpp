@@ -180,7 +180,7 @@ void cubemap_material::compile(RenderDoos::render_engine* engine)
   tex0_handle = engine->add_uniform("environmentMap", uniform_type::sampler, 1);
   }
 
-void cubemap_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* light_dir)
+void cubemap_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* /*light_dir*/)
   {
   engine->bind_program(shader_program_handle);
 
@@ -193,4 +193,190 @@ void cubemap_material::bind(RenderDoos::render_engine* engine, float* projection
   engine->bind_uniform(shader_program_handle, cam_handle);
   engine->bind_uniform(shader_program_handle, tex0_handle);
   engine->bind_texture_to_channel(tex_handle, 0, texture_flags);
+  }
+
+terrain_material::terrain_material()
+  {
+  vs_handle = -1;
+  fs_handle = -1;
+  shader_program_handle = -1;
+  proj_handle = -1;
+  cam_handle = -1;
+  res_handle = -1;
+  texture_heightmap = -1;
+  texture_normalmap = -1;
+  texture_colormap = -1;
+  heightmap_handle = -1;
+  normalmap_handle = -1;
+  colormap_handle = -1;
+  res_w = 800;
+  res_h = 450;
+  }
+
+terrain_material::~terrain_material()
+  {
+  }
+
+void terrain_material::destroy(RenderDoos::render_engine* engine)
+  {
+  engine->remove_shader(vs_handle);
+  engine->remove_shader(fs_handle);
+  engine->remove_program(shader_program_handle);
+  engine->remove_uniform(proj_handle);
+  engine->remove_uniform(cam_handle);
+  engine->remove_uniform(res_handle);
+  engine->remove_uniform(heightmap_handle);
+  engine->remove_uniform(normalmap_handle);
+  engine->remove_uniform(colormap_handle);
+  }
+
+void terrain_material::set_texture_heightmap(int32_t id)
+  {
+  texture_heightmap = id;
+  }
+
+void terrain_material::set_texture_normalmap(int32_t id)
+  {
+  texture_normalmap = id;
+  }
+
+void terrain_material::set_texture_colormap(int32_t id)
+  {
+  texture_colormap = id;
+  }
+
+void terrain_material::set_resolution(uint32_t w, uint32_t h)
+  {
+  res_w = w;
+  res_h = h;
+  }
+
+void terrain_material::compile(RenderDoos::render_engine* engine)
+  {
+  if (engine->get_renderer_type() == RenderDoos::renderer_type::METAL)
+    {
+    vs_handle = engine->add_shader(nullptr, SHADER_VERTEX, "terrain_material_vertex_shader");
+    fs_handle = engine->add_shader(nullptr, SHADER_FRAGMENT, "terrain_material_fragment_shader");
+    }
+  else if (engine->get_renderer_type() == RenderDoos::renderer_type::OPENGL)
+    {
+    vs_handle = engine->add_shader(get_terrain_material_vertex_shader().c_str(), SHADER_VERTEX, nullptr);
+    fs_handle = engine->add_shader(get_terrain_material_fragment_shader().c_str(), SHADER_FRAGMENT, nullptr);
+    }
+  shader_program_handle = engine->add_program(vs_handle, fs_handle);
+  proj_handle = engine->add_uniform("Projection", RenderDoos::uniform_type::mat4, 1);
+  cam_handle = engine->add_uniform("Camera", RenderDoos::uniform_type::mat4, 1);
+  res_handle = engine->add_uniform("iResolution", RenderDoos::uniform_type::vec3, 1);
+  heightmap_handle = engine->add_uniform("Heightmap", RenderDoos::uniform_type::sampler, 1);
+  normalmap_handle = engine->add_uniform("Normalmap", RenderDoos::uniform_type::sampler, 1);
+  colormap_handle = engine->add_uniform("Colormap", RenderDoos::uniform_type::sampler, 1);
+  }
+
+void terrain_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* /*light_dir*/)
+  {
+  engine->bind_program(shader_program_handle);
+  engine->set_uniform(proj_handle, (void*)projection);
+  engine->set_uniform(cam_handle, (void*)camera_space);
+  float res[3] = { (float)res_w, (float)res_h, 1.f };
+  engine->set_uniform(res_handle, (void*)res);
+  int32_t tex = 0;
+  engine->set_uniform(heightmap_handle, (void*)&tex);
+  tex = 1;
+  engine->set_uniform(normalmap_handle, (void*)&tex);
+  tex = 2;
+  engine->set_uniform(colormap_handle, (void*)&tex);
+
+  engine->bind_texture_to_channel(texture_heightmap, 0, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+  engine->bind_texture_to_channel(texture_normalmap, 1, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+  engine->bind_texture_to_channel(texture_colormap, 2, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+
+  engine->bind_uniform(shader_program_handle, proj_handle);
+  engine->bind_uniform(shader_program_handle, cam_handle);
+  engine->bind_uniform(shader_program_handle, res_handle);
+  engine->bind_uniform(shader_program_handle, heightmap_handle);
+  engine->bind_uniform(shader_program_handle, normalmap_handle);
+  engine->bind_uniform(shader_program_handle, colormap_handle);
+  }
+
+
+blit_material::blit_material()
+  {
+  vs_handle = -1;
+  fs_handle = -1;
+  shader_program_handle = -1;
+  fg_tex_handle = -1;
+  bg_tex_handle = -1;
+  vp_handle = -1;
+  cam_handle = -1;
+  tex0_handle = -1;
+  tex1_handle = -1;
+  }
+
+blit_material::~blit_material()
+  {
+  }
+
+void blit_material::set_textures(int32_t foreground_texture, int32_t background_texture, int32_t flags)
+  {
+  if (foreground_texture >= 0 && foreground_texture < MAX_TEXTURE)
+    fg_tex_handle = foreground_texture;
+  else
+    fg_tex_handle = -1;
+  if (background_texture >= 0 && background_texture < MAX_TEXTURE)
+    bg_tex_handle = background_texture;
+  else
+    bg_tex_handle = -1;
+  texture_flags = flags;
+  }
+
+void blit_material::destroy(RenderDoos::render_engine* engine)
+  {
+  engine->remove_program(shader_program_handle);
+  engine->remove_shader(vs_handle);
+  engine->remove_shader(fs_handle);
+  engine->remove_texture(fg_tex_handle);
+  engine->remove_texture(bg_tex_handle);
+  engine->remove_uniform(vp_handle);
+  engine->remove_uniform(cam_handle);
+  engine->remove_uniform(tex0_handle);
+  }
+
+void blit_material::compile(RenderDoos::render_engine* engine)
+  {
+  using namespace RenderDoos;
+  if (engine->get_renderer_type() == renderer_type::METAL)
+    {
+    vs_handle = engine->add_shader(nullptr, SHADER_VERTEX, "blit_material_vertex_shader");
+    fs_handle = engine->add_shader(nullptr, SHADER_FRAGMENT, "blit_material_fragment_shader");
+    }
+  else if (engine->get_renderer_type() == renderer_type::OPENGL)
+    {
+    vs_handle = engine->add_shader(get_blit_material_vertex_shader().c_str(), SHADER_VERTEX, nullptr);
+    fs_handle = engine->add_shader(get_blit_material_fragment_shader().c_str(), SHADER_FRAGMENT, nullptr);
+    }
+  shader_program_handle = engine->add_program(vs_handle, fs_handle);
+  vp_handle = engine->add_uniform("Projection", uniform_type::mat4, 1);
+  cam_handle = engine->add_uniform("Camera", uniform_type::mat4, 1);
+  tex0_handle = engine->add_uniform("Tex0", uniform_type::sampler, 1);
+  tex1_handle = engine->add_uniform("Tex1", uniform_type::sampler, 1);
+  }
+
+void blit_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* /*light_dir*/)
+  {
+  using namespace RenderDoos;
+
+  engine->bind_program(shader_program_handle);
+
+  engine->set_uniform(vp_handle, (void*)projection);
+  engine->set_uniform(cam_handle, (void*)camera_space);  
+  int32_t tex = 0;
+  engine->set_uniform(tex0_handle, (void*)&tex);
+  tex = 1;
+  engine->set_uniform(tex1_handle, (void*)&tex);
+  engine->bind_uniform(shader_program_handle, vp_handle);
+  engine->bind_uniform(shader_program_handle, cam_handle);
+  engine->bind_uniform(shader_program_handle, tex0_handle);
+  engine->bind_uniform(shader_program_handle, tex1_handle);
+  engine->bind_texture_to_channel(fg_tex_handle, 0, texture_flags);
+  engine->bind_texture_to_channel(bg_tex_handle, 1, texture_flags);
   }

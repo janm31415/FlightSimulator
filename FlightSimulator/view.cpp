@@ -101,8 +101,10 @@ void view::loop()
       physics::inertia::cube_element({-6.6f, -0.1f,  0.0f}, {6.54f, 0.10f, 2.70f}, mass * 0.2f),                // elevator
       physics::inertia::cube_element({-6.6f,  0.0f,  0.0f}, {5.31f, 3.10f, 0.10f}, mass * 0.2f),                // rudder
     };
-  auto inertia = physics::inertia::tensor({ 100000.0f, 400000.0f, 500000.0f });
+  //auto inertia = physics::inertia::tensor({ 100000.0f, 400000.0f, 500000.0f });
+  auto inertia = physics::inertia::tensor({ 500000.f, 400000.f, 100000.f });
   auto inertia_tensor = physics::inertia::tensor(elements, true);
+  /*
   std::vector<Wing> wings = {
     Wing({-0.5f,   0.0f, -2.7f}, 6.96f, 3.50f, &NACA_2412),              // left wing
     Wing({ 0.0f,   0.0f, -2.0f},  3.80f, 1.26f, &NACA_0012),              // left aileron
@@ -111,17 +113,27 @@ void view::loop()
     Wing({-6.6f, -0.1f, 0.0f},  6.54f, 2.70f, &NACA_0012),              // elevator
     Wing({-6.6f,  0.0f,  0.0f},  5.31f, 3.10f, &NACA_0012, physics::RIGHT),  // rudder
     };
+  */
+  std::vector<Wing> wings = {
+  Wing({-2.7f,   0.0f, -0.5f}, 6.96f, 3.50f, &NACA_2412),              // left wing
+  Wing({-2.0f,   0.0f,  0.0f},  3.80f, 1.26f, &NACA_0012),              // left aileron
+  Wing({ 2.0f,   0.0f,  0.0f},  3.80f, 1.26f, &NACA_0012),              // right aileron
+  Wing({ 2.7f,   0.0f, -0.5f}, 6.96f, 3.50f, &NACA_2412),              // right wing
+  Wing({ 0.0f, -0.1f, -6.6f},  6.54f, 2.70f, &NACA_0012),              // elevator
+  Wing({ 0.0f,  0.0f, -6.6f},  5.31f, 3.10f, &NACA_0012, physics::RIGHT),  // rudder
+    };
+
   jtk::vec3<float> position = jtk::vec3<float>(0.0f, 2000.0f, 0.0f);
-  jtk::vec3<float> velocity = jtk::vec3<float>(physics::units::meter_per_second(600.0f), 0.0f, 0.0f);
+  jtk::vec3<float> velocity = jtk::vec3<float>(0.0f, 0.0f, physics::units::meter_per_second(600.0f));
 
   Aircraft aircraft(mass, thrust, inertia_tensor, wings);
   aircraft.rigid_body.set_position(position);
   aircraft.rigid_body.set_velocity(velocity);
 
   mesh fuselage;
-  fuselage.init_from_ply_file(_engine, "assets/models/fuselage.ply");
+  fuselage.init_from_ply_file(_engine, "assets/models/fuselage.ply", 0, physics::units::radians(90.f), 0.f);
   mesh propeller;
-  propeller.init_from_ply_file(_engine, "assets/models/propeller.ply");
+  propeller.init_from_ply_file(_engine, "assets/models/propeller.ply", 0, physics::units::radians(90.f), 0.f);
 
   texture colors;
   colors.init_from_file(_engine, "assets/textures/colors.png");
@@ -142,7 +154,23 @@ void view::loop()
   cubemap_material cmat;
   cmat.compile(&_engine);
 
+  terrain_material tmat;
+  texture heightmap, normalmap, colormap;
+  heightmap.init_from_file(_engine, "assets/textures/terrain/heightmap.png");
+  normalmap.init_from_file(_engine, "assets/textures/terrain/normalmap.png");
+  colormap.init_from_file(_engine, "assets/textures/terrain/colormap.png");
+  tmat.set_texture_colormap(colormap.texture_id);
+  tmat.set_texture_heightmap(heightmap.texture_id);
+  tmat.set_texture_normalmap(normalmap.texture_id);
+  tmat.set_resolution(_w/2, _h/2);
+  tmat.compile(&_engine);
+
+  blit_material bmat;
+  bmat.compile(&_engine);
+
   uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, true);
+
+  uint32_t framebuffer_heightmap_id = _engine.add_frame_buffer(tmat.get_resolution_width(), tmat.get_resolution_height(), false);
 
   uint32_t quad_id = _engine.add_geometry(VERTEX_STANDARD);
   RenderDoos::vertex_standard* vp;
@@ -208,7 +236,7 @@ void view::loop()
 
   camera cam(physics::units::radians(45.f), (float)_w / (float)_h, 1.f, 50000.f);
   cam.set_position(0, 1, 0);
-  cam.set_rotation(0, physics::units::radians(-90.f), 0.f);
+  cam.set_rotation(0, 0.f, 0.f);
 
   bool orbit = false;
   float propeller_rotation = 0.f;
@@ -242,7 +270,7 @@ void view::loop()
           }
           case SDLK_o:
             cam.set_position(0, 1, 0);
-            cam.set_rotation(0, physics::units::radians(-90.f), 0.f);
+            cam.set_rotation(0, 0, 0.f);
             orbit = !orbit;
             break;
           } // switch (event.key.keysym.sym) 
@@ -294,7 +322,7 @@ void view::loop()
       joystick.throttle = physics::utils::clamp(joystick.throttle, 0.0f, 1.0f);
       }
 
-    aircraft.joystick = jtk::vec3<float>(joystick.roll, joystick.yaw, joystick.pitch);
+    aircraft.joystick = jtk::vec3<float>(joystick.pitch, joystick.yaw, joystick.roll);
     aircraft.engine.throttle = joystick.throttle;
 
     aircraft.update(dt);
@@ -319,7 +347,7 @@ void view::loop()
       }
     else
       {
-      cam.set_position(-15.0f, 3.0f + aircraft.rigid_body.get_angular_velocity().z * 1.0f, 0.0f);
+      cam.set_position(0.0f, 3.0f + aircraft.rigid_body.get_angular_velocity().x * 1.0f, 15.0f);
       }
 
     RenderDoos::render_drawables drawables;
@@ -329,37 +357,97 @@ void view::loop()
     drawables.metal_drawable = (void*)drawable;
     drawables.metal_screen_texture = (void*)drawable->texture();
 #endif
+
+    //////////////////////
+    /// Terrain pass
+    //////////////////////
     _engine.frame_begin(drawables);
 
     RenderDoos::renderpass_descriptor descr;
+    descr.clear_color = 0xff203040;
+    descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
+    descr.w = tmat.get_resolution_width();
+    descr.h = tmat.get_resolution_height();
+    descr.frame_buffer_handle = framebuffer_heightmap_id;
+    descr.frame_buffer_channel = 10;
+    descr.clear_depth = 1;
+    _engine.renderpass_begin(descr);
+    jtk::float4x4 view_matrix = jtk::get_identity();
+    jtk::vec3<float> xa(1, 0, 0);
+    jtk::vec3<float> ya(0, 1, 0);
+    jtk::vec3<float> za(0, 0, 1);
+    xa = aircraft.rigid_body.transform_direction(xa);
+    ya = aircraft.rigid_body.transform_direction(ya);
+    za = aircraft.rigid_body.transform_direction(za);
+    jtk::set_x_axis(view_matrix, xa);
+    jtk::set_y_axis(view_matrix, ya);
+    jtk::set_z_axis(view_matrix, za);
+    jtk::vec3<float> light(0);
+
+    //view_matrix = jtk::invert_orthonormal(view_matrix);
+    //jtk::float4x4 roty = jtk::make_rotation(physics::ORIGIN, physics::Y_AXIS, physics::radians(-90.f));
+    //view_matrix = jtk::matrix_matrix_multiply(roty, view_matrix);
+    //view_matrix = jtk::get_identity();
+    view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);    
+    float scale = 1.f/1000.f;
+    view_matrix[12] = aircraft.rigid_body.get_position().x*scale;
+    view_matrix[13] = aircraft.rigid_body.get_position().y*scale;
+    view_matrix[14] = aircraft.rigid_body.get_position().z*scale;
+    tmat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
+    _engine.geometry_draw(skybox.geometry_id);
+
+    _engine.renderpass_end();
+
+    //////////////////////
+    /// Skybox pass
+    //////////////////////
     descr.clear_color = 0xff203040;
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
     descr.w = _w;
     descr.h = _h;
     descr.frame_buffer_handle = framebuffer_id;
     descr.frame_buffer_channel = 10;
-    descr.clear_depth = 1;
-
-    mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+    descr.clear_depth = 1;    
 
     _engine.renderpass_begin(descr);
-    jtk::float4x4 view_matrix = jtk::get_identity();
-    jtk::vec3<float> xa(1, 0, 0);
-    jtk::vec3<float> ya(0, 1, 0);
-    jtk::vec3<float> za(0, 0, 1);
+    view_matrix = jtk::get_identity();
+    xa = jtk::vec3<float>(1, 0, 0);
+    ya = jtk::vec3<float>(0, -1, 0);
+    za = jtk::vec3<float>(0, 0, 1);
     xa = aircraft.rigid_body.inverse_transform_direction(xa);
     ya = aircraft.rigid_body.inverse_transform_direction(ya);
-    za = aircraft.rigid_body.inverse_transform_direction(za);
+    za = aircraft.rigid_body.inverse_transform_direction(za);    
     jtk::set_x_axis(view_matrix, xa);
     jtk::set_y_axis(view_matrix, ya);
     jtk::set_z_axis(view_matrix, za);
-    view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);
-    jtk::vec3<float> light(0);
+    view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);    
     cmat.set_cubemap(skybox.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
     cmat.bind(&_engine, &projection_skybox[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(skybox.geometry_id);
     _engine.renderpass_end();
+    /*
+    //////////////////////
+    /// Blit terrain pass
+    //////////////////////
 
+    descr.frame_buffer_handle = framebuffer_id;    
+    descr.clear_flags = 0;
+
+    _engine.renderpass_begin(descr);
+
+    bmat.set_textures(_engine.get_frame_buffer(framebuffer_heightmap_id)->texture_handle, _engine.get_frame_buffer(framebuffer_id)->texture_handle, TEX_WRAP_REPEAT | TEX_FILTER_NEAREST);
+    view_matrix = jtk::get_identity();
+    light = jtk::vec3<float>(0, 0, 1);
+    bmat.bind(&_engine, &projection_ortho[0], &view_matrix[0], &light[0]);
+    _engine.geometry_draw(quad_id);
+
+    _engine.renderpass_end();
+    */
+    //////////////////////
+    /// Aircraft pass
+    //////////////////////
+
+    mat.set_texture(colors.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
     descr.clear_flags = CLEAR_DEPTH;
     _engine.renderpass_begin(descr);
     view_matrix = cam.get_view_matrix();
@@ -370,6 +458,11 @@ void view::loop()
     _engine.geometry_draw(fuselage.geometry_id);
     _engine.renderpass_end();
 
+
+    //////////////////////
+    /// Propeller pass
+    //////////////////////
+
     descr.clear_flags = 0;
     _engine.renderpass_begin(descr);
     propeller_rotation += 0.5f;
@@ -377,12 +470,16 @@ void view::loop()
       propeller_rotation -= 2.f * 3.1415926535f;
 
     view_matrix = cam.get_view_matrix();
-    jtk::float4x4 rot = jtk::make_rotation(physics::ORIGIN, physics::X_AXIS, propeller_rotation);
+    jtk::float4x4 rot = jtk::make_rotation(physics::ORIGIN, physics::Z_AXIS, propeller_rotation);
     view_matrix = jtk::matrix_matrix_multiply(view_matrix, rot);
     mat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(propeller.geometry_id);
 
     _engine.renderpass_end();
+
+    //////////////////////
+    /// Blit to screen pass
+    //////////////////////
 
     descr.frame_buffer_handle = -1;
     descr.clear_color = 0xff00ffff;
@@ -410,6 +507,11 @@ void view::loop()
 
   mat.destroy(&_engine);
   cmat.destroy(&_engine);
+  tmat.destroy(&_engine);
+  bmat.destroy(&_engine);
+  heightmap.cleanup(_engine);
+  normalmap.cleanup(_engine);
+  colormap.cleanup(_engine);
   skybox.cleanup(_engine);
   fuselage.cleanup(_engine);
   propeller.cleanup(_engine);

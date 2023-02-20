@@ -109,11 +109,23 @@ void mesh::cleanup(RenderDoos::render_engine& engine)
     }
   }
 
-void mesh::init_from_ply_file(RenderDoos::render_engine& engine, const std::string& filename)
+void mesh::init_from_ply_file(RenderDoos::render_engine& engine, const std::string& filename, float rx, float ry, float rz)
   {
+  jtk::float4x4 rotx = jtk::make_rotation(physics::ORIGIN, physics::X_AXIS, rx);
+  jtk::float4x4 roty = jtk::make_rotation(physics::ORIGIN, physics::Y_AXIS, ry);
+  jtk::float4x4 rotz = jtk::make_rotation(physics::ORIGIN, physics::Z_AXIS, rz);
+  jtk::float4x4 rot = jtk::matrix_matrix_multiply(jtk::matrix_matrix_multiply(rotz, roty), rotx);
   std::vector<uint32_t> clrs;
   if (read_ply(filename.c_str(), vertices, normals, clrs, triangles, uv))
     {
+    for (auto& v : vertices)
+      {
+      v = physics::utils::transform_point(rot, v);
+      }
+    for (auto& n : normals)
+      {
+      n = physics::utils::transform_vector(rot, n);
+      }
     std::vector<jtk::vec2<float>> uv_per_vertex(vertices.size(), jtk::vec2<float>(-1));
     for (uint32_t i = 0; i < triangles.size(); ++i)
       {
