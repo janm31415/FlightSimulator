@@ -82,6 +82,8 @@ view::view(int /*argc*/, char** /*argv*/) : _w(1600), _h(900), _quit(false)
 
   _engine.init(nullptr, nullptr, RenderDoos::renderer_type::OPENGL);
 #endif  
+  SDL_SetRelativeMouseMode(SDL_TRUE);
+  SDL_ShowCursor(SDL_FALSE);
   }
 
 view::~view()
@@ -230,6 +232,9 @@ void view::loop()
   cam.set_position(0, 1, 0);
   cam.set_rotation(0, 0.f, 0.f);
 
+  float orbit_yaw = 0.f;
+  float orbit_pitch = 0.f;
+
   bool orbit = false;
   float propeller_rotation = 0.f;
   int time_speedup = 1;
@@ -250,6 +255,12 @@ void view::loop()
         case SDL_QUIT:
         {
         _quit = true;
+        break;
+        }
+        case SDL_MOUSEMOTION: 
+        {
+        orbit_yaw += event.motion.xrel*0.1f;
+        orbit_pitch += event.motion.yrel * 0.1f;
         break;
         }
         case SDL_KEYDOWN:
@@ -345,8 +356,9 @@ void view::loop()
       front.z = sin(yaw) * cos(pitch);
       */
       const jtk::vec3<float> center(0);
-      const float radius = 20.f;
-      jtk::vec3<float> front(0, 0, -1);
+      const float radius = 20.f;      
+      jtk::float4x4 orientation = jtk::compute_from_pitch_yaw_roll_transformation(physics::units::radians(orbit_pitch), physics::units::radians(orbit_yaw), 0, 0, 0, 0);
+      jtk::vec3<float> front = jtk::get_z_axis(orientation);
       auto offset = jtk::normalize(front) * radius;
       jtk::vec3<float> pos = center + offset;
       pos = aircraft.rigid_body.inverse_transform_direction(pos);
