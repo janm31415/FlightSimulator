@@ -2,8 +2,6 @@
 #include <stdexcept>
 #include <chrono>
 
-#define TERRAIN
-
 #if defined(RENDERDOOS_METAL)
 #define NS_PRIVATE_IMPLEMENTATION
 #define CA_PRIVATE_IMPLEMENTATION
@@ -95,7 +93,7 @@ void view::loop()
   {
   const float mass = 10000.0f;
   const float thrust = 20000.0f;
-  
+
   std::vector<physics::inertia::element> elements = {
     physics::inertia::cube_element({-2.7f,  0.0f, -0.5f}, {3.50f, 0.10f, 6.96f}, mass * 0.25f),               // left wing
     physics::inertia::cube_element({-2.0f,  0.0f,  0.0f}, {1.26f, 0.10f, 3.80f}, mass * 0.05f),               // left aileron
@@ -148,7 +146,6 @@ void view::loop()
   cubemap_material cmat;
   cmat.compile(&_engine);
 
-#ifdef TERRAIN
   terrain_material tmat;
   texture heightmap, normalmap, colormap;
   heightmap.init_from_file(_engine, "assets/textures/terrain/heightmap.png");
@@ -157,16 +154,16 @@ void view::loop()
   tmat.set_texture_colormap(colormap.texture_id);
   tmat.set_texture_heightmap(heightmap.texture_id);
   tmat.set_texture_normalmap(normalmap.texture_id);
-  tmat.set_resolution(_w/2, _h/2);
+  tmat.set_resolution(_w / 2, _h / 2);
   tmat.compile(&_engine);
 
   blit_material bmat;
   bmat.compile(&_engine);
-#endif
+
   uint32_t framebuffer_id = _engine.add_frame_buffer(_w, _h, true);
-#ifdef TERRAIN
+
   uint32_t framebuffer_heightmap_id = _engine.add_frame_buffer(tmat.get_resolution_width(), tmat.get_resolution_height(), false);
-#endif
+
   uint32_t quad_id = _engine.add_geometry(VERTEX_STANDARD);
   RenderDoos::vertex_standard* vp;
   uint32_t* ip;
@@ -273,8 +270,8 @@ void view::loop()
           }
           case SDLK_RIGHTBRACKET:
           {
-            time_speedup += 1;
-            break;
+          time_speedup += 1;
+          break;
           }
           case SDLK_o:
             cam.set_position(0, 1, 0);
@@ -337,6 +334,7 @@ void view::loop()
       aircraft.update(dt);
     if (orbit)
       {
+      /*
       const float radius = 20.f;
       float pitch = 0.f;
       float yaw = 0.f;
@@ -345,12 +343,16 @@ void view::loop()
       front.x = cos(yaw) * cos(pitch);
       front.y = sin(pitch);
       front.z = sin(yaw) * cos(pitch);
+      */
+      const jtk::vec3<float> center(0);
+      const float radius = 20.f;
+      jtk::vec3<float> front(0, 0, -1);
       auto offset = jtk::normalize(front) * radius;
-      jtk::vec3<float> pos = center + offset;      
-      pos = aircraft.rigid_body.inverse_transform_direction(pos);      
+      jtk::vec3<float> pos = center + offset;
+      pos = aircraft.rigid_body.inverse_transform_direction(pos);
       cam.set_position(pos.x, pos.y, -pos.z);
       jtk::vec3<float> up(0, 1, 0);
-      up = aircraft.rigid_body.inverse_transform_direction(up);      
+      up = aircraft.rigid_body.inverse_transform_direction(up);
       up.z *= -1;
       cam.set_up(up);
       cam.look_at(center);
@@ -374,7 +376,7 @@ void view::loop()
     jtk::vec3<float> za(0, 0, 1);
     jtk::float4x4 view_matrix = jtk::get_identity();
     jtk::vec3<float> light(0);
-    
+
     //////////////////////
     /// Terrain pass
     //////////////////////
@@ -383,8 +385,7 @@ void view::loop()
     RenderDoos::renderpass_descriptor descr;
     descr.clear_color = 0xff203040;
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
-    
-#ifdef TERRAIN
+
     descr.clear_color = 0xff203040;
     descr.clear_flags = CLEAR_COLOR | CLEAR_DEPTH;
     descr.w = tmat.get_resolution_width();
@@ -393,32 +394,38 @@ void view::loop()
     descr.frame_buffer_channel = 10;
     descr.clear_depth = 1;
     _engine.renderpass_begin(descr);
-    view_matrix = jtk::get_identity();
-    xa = jtk::vec3<float>(1, 0, 0);
-    ya = jtk::vec3<float>(0, 1, 0);
-    za = jtk::vec3<float>(0, 0, 1);
-    xa = aircraft.rigid_body.transform_direction(xa);
-    ya = aircraft.rigid_body.transform_direction(ya);
-    za = aircraft.rigid_body.transform_direction(za);
-    jtk::set_x_axis(view_matrix, xa);
-    jtk::set_y_axis(view_matrix, ya);
-    jtk::set_z_axis(view_matrix, za);
+    if (orbit)
+      {
+      view_matrix = jtk::get_identity();
+      float scale = 1.f / 1000.f;
+      view_matrix[12] = aircraft.rigid_body.get_position().x * scale;
+      view_matrix[13] = aircraft.rigid_body.get_position().y * scale;
+      view_matrix[14] = aircraft.rigid_body.get_position().z * scale;
+      }
+    else
+      {
+      xa = jtk::vec3<float>(1, 0, 0);
+      ya = jtk::vec3<float>(0, 1, 0);
+      za = jtk::vec3<float>(0, 0, 1);
+      xa = aircraft.rigid_body.transform_direction(xa);
+      ya = aircraft.rigid_body.transform_direction(ya);
+      za = aircraft.rigid_body.transform_direction(za);
+      jtk::set_x_axis(view_matrix, xa);
+      jtk::set_y_axis(view_matrix, ya);
+      jtk::set_z_axis(view_matrix, za);
+      //view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);
+      float scale = 1.f / 1000.f;
+      view_matrix[12] = aircraft.rigid_body.get_position().x * scale;
+      view_matrix[13] = aircraft.rigid_body.get_position().y * scale;
+      view_matrix[14] = aircraft.rigid_body.get_position().z * scale;
+      }
 
-    //view_matrix = jtk::invert_orthonormal(view_matrix);
-    //jtk::float4x4 roty = jtk::make_rotation(physics::ORIGIN, physics::Y_AXIS, physics::radians(-90.f));
-    //view_matrix = jtk::matrix_matrix_multiply(roty, view_matrix);
-    //view_matrix = jtk::get_identity();
-    view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);    
-    float scale = 1.f/1000.f;
-    view_matrix[12] = aircraft.rigid_body.get_position().x*scale;
-    view_matrix[13] = aircraft.rigid_body.get_position().y*scale;
-    view_matrix[14] = aircraft.rigid_body.get_position().z*scale;
     //tmat.bind(&_engine, &cam.get_projection_matrix()[0], &view_matrix[0], &light[0]);
     tmat.bind(&_engine, &projection_ortho[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(quad_id);
 
     _engine.renderpass_end();
-#endif
+
     //////////////////////
     /// Skybox pass
     //////////////////////
@@ -428,30 +435,37 @@ void view::loop()
     descr.h = _h;
     descr.frame_buffer_handle = framebuffer_id;
     descr.frame_buffer_channel = 10;
-    descr.clear_depth = 1;    
+    descr.clear_depth = 1;
 
-    _engine.renderpass_begin(descr);
-    view_matrix = jtk::get_identity();
-    xa = jtk::vec3<float>(1, 0, 0);
-    ya = jtk::vec3<float>(0, -1, 0);
-    za = jtk::vec3<float>(0, 0, 1);
-    xa = aircraft.rigid_body.inverse_transform_direction(xa);
-    ya = aircraft.rigid_body.inverse_transform_direction(ya);
-    za = aircraft.rigid_body.inverse_transform_direction(za);    
-    jtk::set_x_axis(view_matrix, xa);
-    jtk::set_y_axis(view_matrix, ya);
-    jtk::set_z_axis(view_matrix, za);
-    view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);    
+    _engine.renderpass_begin(descr);    
+    if (orbit)
+      {
+      view_matrix = jtk::get_identity();
+      view_matrix[5] = -1;
+      }
+    else
+      {
+      xa = jtk::vec3<float>(1, 0, 0);
+      ya = jtk::vec3<float>(0, -1, 0);
+      za = jtk::vec3<float>(0, 0, 1);
+      xa = aircraft.rigid_body.inverse_transform_direction(xa);
+      ya = aircraft.rigid_body.inverse_transform_direction(ya);
+      za = aircraft.rigid_body.inverse_transform_direction(za);
+      jtk::set_x_axis(view_matrix, xa);
+      jtk::set_y_axis(view_matrix, ya);
+      jtk::set_z_axis(view_matrix, za);
+      view_matrix = jtk::matrix_matrix_multiply(cam.get_view_matrix(), view_matrix);
+      }
     cmat.set_cubemap(skybox.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
     cmat.bind(&_engine, &projection_skybox[0], &view_matrix[0], &light[0]);
     _engine.geometry_draw(skybox.geometry_id);
     _engine.renderpass_end();
-    
+
     //////////////////////
     /// Blit terrain pass
     //////////////////////
 
-    descr.frame_buffer_handle = framebuffer_id;    
+    descr.frame_buffer_handle = framebuffer_id;
     descr.clear_flags = CLEAR_DEPTH;
 
     _engine.renderpass_begin(descr);
@@ -463,7 +477,7 @@ void view::loop()
     _engine.geometry_draw(quad_id);
 
     _engine.renderpass_end();
-    
+
     //////////////////////
     /// Aircraft pass
     //////////////////////
@@ -528,13 +542,11 @@ void view::loop()
 
   mat.destroy(&_engine);
   cmat.destroy(&_engine);
-  #ifdef TERRAIN
   tmat.destroy(&_engine);
   bmat.destroy(&_engine);
   heightmap.cleanup(_engine);
   normalmap.cleanup(_engine);
   colormap.cleanup(_engine);
-  #endif
   skybox.cleanup(_engine);
   fuselage.cleanup(_engine);
   propeller.cleanup(_engine);

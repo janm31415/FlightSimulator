@@ -113,10 +113,17 @@ out vec4 FragColor;
 
 vec2 scalePosition(in vec2 p)
 {
+#if 0
+  p = p*0.02;
+  p = p+vec2(0.5);
+  p = mix(vec2(0.5, 0.0), vec2(1.0, 0.5), p);
+  return p;
+#else
   p = p*0.005;
   p = p+vec2(0.5);
   //p = mix(vec2(0.5, 0.0), vec2(1.0, 0.5), p);
   return p;
+#endif
 }
 
 float terrain( in vec2 p)
