@@ -113,9 +113,9 @@ out vec4 FragColor;
 
 vec2 scalePosition(in vec2 p)
 {
-  p = p*0.05;
+  p = p*0.005;
   p = p+vec2(0.5);
-  p = mix(vec2(0.5, 0.0), vec2(1.0, 0.5), p);
+  //p = mix(vec2(0.5, 0.0), vec2(1.0, 0.5), p);
   return p;
 }
 
@@ -124,7 +124,7 @@ float terrain( in vec2 p)
    p = scalePosition(p);
    if (p.x < 0.0 || p.x >= 1.0 || p.y < 0.0 || p.y >= 1.0)
      return 0.0;   
-   return texture( Heightmap, p).x*3;   
+   return texture( Heightmap, p).x*5;   
 }
 
 float map( in vec3 p )
@@ -148,14 +148,14 @@ vec3 calcNormal( in vec3 pos, float t )
     return vec3(0,1,0);
   return texture( Normalmap, p).rgb;
 #else
-	float e = 0.001;
-	e = 0.0001*t;
-    vec3  eps = vec3(e,0.0,0.0);
+	  //float e = 0.001;
+	  float e = 0.001*t;
+    vec3 eps = vec3(e,0.0,0.0);
     vec3 nor;
     nor.x = map(pos+eps.xyy) - map(pos-eps.xyy);
     nor.y = map(pos+eps.yxy) - map(pos-eps.yxy);
     nor.z = map(pos+eps.yyx) - map(pos-eps.yyx);
-    return normalize(nor);
+    return -normalize(nor);
 #endif
 }
 
@@ -221,7 +221,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
       vec3 sunDir = normalize(vec3(0, +0.5, -1));
 
       col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.9 + col*0.1;
-      fragColor = vec4(pow(col*2.0, vec3(2.2)), 1.0);
+      fragColor = vec4(pow(col*1.2, vec3(2.2)), texCol.a);
       }
     else
       {
@@ -270,15 +270,12 @@ uniform sampler2D Tex1;
 
 void main()
   {
-  vec4 clr = texture(Tex0, TexCoord);
-  if (clr.a != 0)
-    {
-    FragColor = clr;
-    }
-  else
-    {
-    FragColor = texture(Tex1, TexCoord);
-    }
+  vec4 clr0 = texture(Tex0, TexCoord);
+  vec4 clr1 = texture(Tex1, TexCoord);
+  
+  vec3 clr = clr0.rgb * clr0.a + clr1.rgb * (1-clr0.a);
+
+  FragColor = vec4(clr,1);
   }
 )");
   }

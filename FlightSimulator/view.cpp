@@ -125,7 +125,7 @@ void view::loop()
   Wing({ 0.0f,  0.0f, -6.6f},  5.31f, 3.10f, &NACA_0012, physics::RIGHT),  // rudder
     };
 
-  jtk::vec3<float> position = jtk::vec3<float>(0.0f, 2000.0f, 0.0f);
+  jtk::vec3<float> position = jtk::vec3<float>(0.0f, 4000.0f, 0.0f);
   jtk::vec3<float> velocity = jtk::vec3<float>(0.0f, 0.0f, physics::units::meter_per_second(600.0f));
 
   Aircraft aircraft(mass, thrust, inertia_tensor, wings);
@@ -243,6 +243,7 @@ void view::loop()
 
   bool orbit = false;
   float propeller_rotation = 0.f;
+  int time_speedup = 1;
 
   auto last_tic = std::chrono::high_resolution_clock::now();
   auto start = last_tic;
@@ -270,6 +271,18 @@ void view::loop()
           {
           _quit = true;
           break;
+          }
+          case SDLK_LEFTBRACKET:
+          {
+          time_speedup -= 1;
+          if (time_speedup < 1)
+            time_speedup = 1;
+          break;
+          }
+          case SDLK_RIGHTBRACKET:
+          {
+            time_speedup += 1;
+            break;
           }
           case SDLK_o:
             cam.set_position(0, 1, 0);
@@ -328,7 +341,8 @@ void view::loop()
     aircraft.joystick = jtk::vec3<float>(joystick.pitch, joystick.yaw, joystick.roll);
     aircraft.engine.throttle = joystick.throttle;
 
-    aircraft.update(dt);
+    for (int i = 0; i < time_speedup; ++i)
+      aircraft.update(dt);
     if (orbit)
       {
       const float radius = 20.f;
