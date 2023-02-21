@@ -20,8 +20,8 @@ namespace physics
   // directions in body space
   const jtk::vec3<float> UP(0.0f, 1.0f, 0.0f);
   const jtk::vec3<float> DOWN(0.0f, -1.0f, 0.0f);
-  const jtk::vec3<float> RIGHT(1.0f, 0.0f, 0.0f);
-  const jtk::vec3<float> LEFT(-1.0f, 0.0f, 0.0f);
+  const jtk::vec3<float> RIGHT(-1.0f, 0.0f, 0.0f);
+  const jtk::vec3<float> LEFT(1.0f, 0.0f, 0.0f);
   const jtk::vec3<float> FORWARD(0.0f, 0.0f, 1.0f);
   const jtk::vec3<float> BACKWARD(0.0f, 0.0f, -1.0f);
 
@@ -200,10 +200,6 @@ namespace physics
       void set_angular_velocity(const jtk::vec3<float>& vel);
 
       void update(seconds dt);
-
-      void get_roll_pitch_yaw(float& roll, float& pitch, float& yaw) const;
-
-      jtk::float4x4 get_coordinate_system() const;
 
     private:
       jtk::vec3<float> m_force;

@@ -95,27 +95,19 @@ void view::loop()
   {
   const float mass = 10000.0f;
   const float thrust = 20000.0f;
+  
   std::vector<physics::inertia::element> elements = {
-      physics::inertia::cube_element({-0.5f,  0.0f, -2.7f}, {6.96f, 0.10f, 3.50f}, mass * 0.25f),               // left wing
-      physics::inertia::cube_element({ 0.0f,  0.0f, -2.0f}, {3.80f, 0.10f, 1.26f}, mass * 0.05f),               // left aileron
-      physics::inertia::cube_element({ 0.0f,  0.0f,  2.0f}, {3.80f, 0.10f, 1.26f}, mass * 0.05f),               // right aileron
-      physics::inertia::cube_element({-0.5f,  0.0f,  2.7f}, {6.96f, 0.10f, 3.50f}, mass * 0.25f),               // right wing
-      physics::inertia::cube_element({-6.6f, -0.1f,  0.0f}, {6.54f, 0.10f, 2.70f}, mass * 0.2f),                // elevator
-      physics::inertia::cube_element({-6.6f,  0.0f,  0.0f}, {5.31f, 3.10f, 0.10f}, mass * 0.2f),                // rudder
+    physics::inertia::cube_element({-2.7f,  0.0f, -0.5f}, {3.50f, 0.10f, 6.96f}, mass * 0.25f),               // left wing
+    physics::inertia::cube_element({-2.0f,  0.0f,  0.0f}, {1.26f, 0.10f, 3.80f}, mass * 0.05f),               // left aileron
+    physics::inertia::cube_element({ 2.0f,  0.0f,  0.0f}, {1.26f, 0.10f, 3.80f}, mass * 0.05f),               // right aileron
+    physics::inertia::cube_element({ 2.7f,  0.0f, -0.5f}, {3.50f, 0.10f, 6.96f}, mass * 0.25f),               // right wing
+    physics::inertia::cube_element({ 0.0f, -0.1f, -6.6f}, {2.70f, 0.10f, 6.54f}, mass * 0.2f),                // elevator
+    physics::inertia::cube_element({ 0.0f,  0.0f, -6.6f}, {0.10f, 3.10f, 5.31f}, mass * 0.2f),                // rudder
     };
-  //auto inertia = physics::inertia::tensor({ 100000.0f, 400000.0f, 500000.0f });
+
   auto inertia = physics::inertia::tensor({ 500000.f, 400000.f, 100000.f });
   auto inertia_tensor = physics::inertia::tensor(elements, true);
-  /*
-  std::vector<Wing> wings = {
-    Wing({-0.5f,   0.0f, -2.7f}, 6.96f, 3.50f, &NACA_2412),              // left wing
-    Wing({ 0.0f,   0.0f, -2.0f},  3.80f, 1.26f, &NACA_0012),              // left aileron
-    Wing({ 0.0f,   0.0f,  2.0f},  3.80f, 1.26f, &NACA_0012),              // right aileron
-    Wing({-0.5f,   0.0f,  2.7f}, 6.96f, 3.50f, &NACA_2412),              // right wing
-    Wing({-6.6f, -0.1f, 0.0f},  6.54f, 2.70f, &NACA_0012),              // elevator
-    Wing({-6.6f,  0.0f,  0.0f},  5.31f, 3.10f, &NACA_0012, physics::RIGHT),  // rudder
-    };
-  */
+
   std::vector<Wing> wings = {
   Wing({-2.7f,   0.0f, -0.5f}, 6.96f, 3.50f, &NACA_2412),              // left wing
   Wing({-2.0f,   0.0f,  0.0f},  3.80f, 1.26f, &NACA_0012),              // left aileron
@@ -354,11 +346,12 @@ void view::loop()
       front.y = sin(pitch);
       front.z = sin(yaw) * cos(pitch);
       auto offset = jtk::normalize(front) * radius;
-      jtk::vec3<float> pos = center + offset;
-      pos = aircraft.rigid_body.inverse_transform_direction(pos);
-      cam.set_position(pos.x, pos.y, pos.z);
+      jtk::vec3<float> pos = center + offset;      
+      pos = aircraft.rigid_body.inverse_transform_direction(pos);      
+      cam.set_position(pos.x, pos.y, -pos.z);
       jtk::vec3<float> up(0, 1, 0);
-      up = aircraft.rigid_body.inverse_transform_direction(up);
+      up = aircraft.rigid_body.inverse_transform_direction(up);      
+      up.z *= -1;
       cam.set_up(up);
       cam.look_at(center);
       }

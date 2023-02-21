@@ -265,30 +265,6 @@ namespace physics
     m_angular_velocity = vel;
     }
 
-  void RigidBody::get_roll_pitch_yaw(float& roll, float& pitch, float& yaw) const
-    {    
-    const float x = m_orientation[0];
-    const float y = m_orientation[1];
-    const float z = m_orientation[2];
-    const float w = m_orientation[3];
-    roll = atan2(2.0 * (y * z + w * x), w * w - x * x - y * y + z * z);
-    pitch = asin(-2.0 * (x * z - w * y));
-    yaw = atan2(2.0 * (x * y + w * z), w * w + x * x - y * y - z * z);
-    }
-
-  jtk::float4x4 RigidBody::get_coordinate_system() const
-    {
-    const float x = m_orientation[1];
-    const float y = m_orientation[2];
-    const float z = m_orientation[3];
-    const float w = m_orientation[0];
-    jtk::float4x4 cs = jtk::quaternion_to_rotation(jtk::float4(x,y,z,w));
-    cs[12] = m_position.x;
-    cs[13] = m_position.y;
-    cs[14] = m_position.z;
-    return cs;
-    }
-
   void RigidBody::update(seconds dt)
     {
     jtk::vec3<float> acceleration = m_force / m_mass;
