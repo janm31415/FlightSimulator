@@ -257,9 +257,9 @@ void view::loop()
         _quit = true;
         break;
         }
-        case SDL_MOUSEMOTION: 
+        case SDL_MOUSEMOTION:
         {
-        orbit_yaw += event.motion.xrel*0.1f;
+        orbit_yaw += event.motion.xrel * 0.1f;
         orbit_pitch += event.motion.yrel * 0.1f;
         break;
         }
@@ -345,18 +345,8 @@ void view::loop()
       aircraft.update(dt);
     if (orbit)
       {
-      /*
+      const jtk::vec3<float> center(0);
       const float radius = 20.f;
-      float pitch = 0.f;
-      float yaw = 0.f;
-      const jtk::vec3<float> center(0);
-      jtk::vec3<float> front;
-      front.x = cos(yaw) * cos(pitch);
-      front.y = sin(pitch);
-      front.z = sin(yaw) * cos(pitch);
-      */
-      const jtk::vec3<float> center(0);
-      const float radius = 20.f;      
       jtk::float4x4 orientation = jtk::compute_from_pitch_yaw_roll_transformation(physics::units::radians(orbit_pitch), physics::units::radians(orbit_yaw), 0, 0, 0, 0);
       jtk::vec3<float> front = jtk::get_z_axis(orientation);
       auto offset = jtk::normalize(front) * radius;
@@ -408,7 +398,21 @@ void view::loop()
     _engine.renderpass_begin(descr);
     if (orbit)
       {
-      view_matrix = jtk::get_identity();
+      view_matrix = jtk::compute_from_pitch_yaw_roll_transformation(-physics::units::radians(orbit_pitch), physics::units::radians(orbit_yaw), 0, 0, 0, 0);
+      //view_matrix = jtk::invert_orthonormal(view_matrix);
+
+      view_matrix[0] *= -1;
+      //view_matrix[1] *= -1;
+      view_matrix[2] *= -1;
+      //
+      view_matrix[4] *= -1;
+      //view_matrix[5] *= -1;
+      view_matrix[6] *= -1;
+      //
+      view_matrix[8] *= -1;
+      //view_matrix[9] *= -1;
+      view_matrix[10] *= -1;
+
       float scale = 1.f / 1000.f;
       view_matrix[12] = aircraft.rigid_body.get_position().x * scale;
       view_matrix[13] = aircraft.rigid_body.get_position().y * scale;
@@ -449,11 +453,23 @@ void view::loop()
     descr.frame_buffer_channel = 10;
     descr.clear_depth = 1;
 
-    _engine.renderpass_begin(descr);    
+    _engine.renderpass_begin(descr);
     if (orbit)
       {
-      view_matrix = jtk::get_identity();
-      view_matrix[5] = -1;
+      view_matrix = jtk::compute_from_pitch_yaw_roll_transformation(physics::units::radians(orbit_pitch), physics::units::radians(orbit_yaw), 0, 0, 0, 0);
+      view_matrix = jtk::invert_orthonormal(view_matrix);
+
+      view_matrix[0] *= -1;
+      //view_matrix[1] *= -1;
+      view_matrix[2] *= -1;
+      //
+      //view_matrix[4] *= -1;
+      view_matrix[5] *= -1;
+      //view_matrix[6] *= -1;
+      //
+      view_matrix[8] *= -1;
+      //view_matrix[9] *= -1;
+      view_matrix[10] *= -1;
       }
     else
       {
