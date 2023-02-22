@@ -117,7 +117,7 @@ float map( float3 p,  texture2d<float> Heightmap, sampler sampler2d)
 
 float intersect( float3 ro, float3 rd, texture2d<float> Heightmap, sampler sampler2d)
 {
-    const float maxd = 40.0;
+    const float maxd = 80.0;
     const float precis = 0.001;
     float t = 0.0;
     for( int i=0; i<256; i++ )
@@ -164,7 +164,7 @@ fragment float4 terrain_material_fragment_shader(const TerrainVertexOut vertexIn
   float3 rz = (input.camera_matrix*float4(0,0,1,0)).xyz;
   float3 rd = normalize( s.x*rx + s.y*ry + 2.0*rz );
     
-    
+  float3 sunDir = normalize(float3(0, 0.5, -1));
   float t = intersect(ro, rd, heightmap, sampler2d);
     
   if(t > 0.0)
@@ -176,8 +176,15 @@ fragment float4 terrain_material_fragment_shader(const TerrainVertexOut vertexIn
     if (texCol.a > 0)
       {
       float3 col = float3(pow(texCol.rgb, float3(0.5)));
-		  float3 sunDir = normalize(float3(0, 0.5, -1));
-      col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.9 + col * 0.1;
+      col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.7 + col * 0.3;
+      
+      //fog
+      float fo = 1-exp(-pow(clamp((t-80.0*0.5)/80.0, 0.0, 1.0), 1)*10.0);
+      float3 fco = float3(0.7);
+      col = mix(col, fco, fo);
+      //sun scatter
+      float sundot = clamp(dot(rd,sunDir),0.0, 1.0);
+      col += 0.3*float3(1.0,0.7,0.3)*pow(sundot,8.0);
       return float4(pow(col*1.2, float3(2.2)), texCol.a);
       }
 	  }
