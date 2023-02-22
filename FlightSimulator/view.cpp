@@ -260,7 +260,7 @@ void view::loop()
         case SDL_MOUSEMOTION:
         {
         orbit_yaw += event.motion.xrel * 0.1f;
-        orbit_pitch += event.motion.yrel * 0.1f;
+        orbit_pitch -= event.motion.yrel * 0.1f;
         break;
         }
         case SDL_KEYDOWN:

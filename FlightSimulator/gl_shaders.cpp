@@ -111,6 +111,8 @@ uniform sampler2D Colormap;
 
 out vec4 FragColor;
 
+#define MAX_DEPTH 80
+
 vec2 scalePosition(in vec2 p)
 {
 #if 0
@@ -168,16 +170,15 @@ vec3 calcNormal( in vec3 pos, float t )
 
 float intersect( in vec3 ro, in vec3 rd )
 {
-    const float maxd = 40.0;
     const float precis = 0.001;
     float t = 0.0;
     for( int i=0; i<256; i++ )
     {
         float h = map( ro+rd*t );
-        if( abs(h)<precis || t>maxd ) break;
+        if( abs(h)<precis || t>MAX_DEPTH ) break;
         t += h*0.5;
     }
-    return (t>maxd)?-1.0:t;
+    return (t>MAX_DEPTH)?-1.0:t;
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -211,9 +212,28 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
   //    dot(rd, planeUp)
   //);
     
-    
+  vec3 sunDir = normalize(vec3(0, +0.5, -1));
   float t = intersect(ro, rd);
-    
+#if 0  
+  if (t == -1)
+    {
+    float scale = 1.0;
+    float sundot = clamp(dot(rd,sunDir),0.0,1.0);
+    // sky		
+    vec3 col = vec3(0.3,0.5,0.85) - rd.y*rd.y*0.5;
+    col = mix( col, 0.85*vec3(0.7,0.75,0.85), pow( 1.0-max(rd.y,0.0), 4.0 ) );
+    // sun
+		col += 0.25*vec3(1.0,0.7,0.4)*pow( sundot,5.0 );
+		col += 0.25*vec3(1.0,0.8,0.6)*pow( sundot,64.0 );
+		col += 0.2*vec3(1.0,0.8,0.6)*pow( sundot,512.0 );
+    // clouds
+		//vec2 sc = ro.xz + rd.xz*(scale*1000.0-ro.y)/rd.y;
+		//col = mix( col, vec3(1.0,0.95,1.0), 0.5*smoothstep(0.5,0.8,fbm(0.0005*sc/scale)) );
+    // horizon
+    col = mix( col, 0.68*vec3(0.4,0.65,1.0), pow( 1.0-max(rd.y,0.0), 16.0 ) );
+    fragColor = vec4(pow(col*1.2, vec3(2.2)), 0.3);
+    }
+#endif
   if (t > 0.0)
     {	
 		// Get some information about our intersection
@@ -224,10 +244,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     if (texCol.a > 0)
       {		
 		  vec3 col = vec3(pow(texCol.rgb, vec3(0.5)));
-		
-      vec3 sunDir = normalize(vec3(0, +0.5, -1));
 
-      col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.9 + col*0.1;
+      col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.7 + col*0.3;
+      
+      // fog
+      float fo = 1-exp(-pow(clamp((t-MAX_DEPTH*0.5)/MAX_DEPTH, 0.0, 1.0), 1)*10);
+      vec3 fco = vec3(0.7);// + 0.1*vec3(1.0,0.8,0.5)*pow( sundot, 4.0 );
+      col = mix( col, fco, fo );
+      // sun scatter
+      float sundot = clamp(dot(rd,sunDir),0.0,1.0);
+      col += 0.3*vec3(1.0,0.7,0.3)*pow( sundot, 8.0 );
       fragColor = vec4(pow(col*1.2, vec3(2.2)), texCol.a);
       }
     else
