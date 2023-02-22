@@ -1,5 +1,6 @@
 #include "scene.h"
 #include "jtk/ply.h"
+#include "jtk/rand.h"
 
 #include "RenderDoos/render_engine.h"
 #include "RenderDoos/types.h"
@@ -172,9 +173,27 @@ texture::~texture()
 
 void texture::init_from_file(RenderDoos::render_engine& engine, const std::string& filename)
   {
-  int w, h, nr_of_channels;
+  int nr_of_channels;
   im = stbi_load(filename.c_str(), &w, &h, &nr_of_channels, 4);
   texture_id = engine.add_texture(w, h, RenderDoos::texture_format_rgba8, im);
+  }
+
+void texture::init_from_noise(RenderDoos::render_engine& engine, int width, int height, uint32_t seed)
+  {
+  if (seed == 0)
+    seed = 0x12465461;
+  w = width;
+  h = height;
+  uint32_t* tmp = new uint32_t[w*h];
+  jtk::xorshift32 rand;
+  rand.seed(seed);
+  uint32_t* p_tmp = tmp;
+  for (uint32_t i = 0; i < w*h; ++i)
+    {
+    *p_tmp++ = rand();
+    }
+  texture_id = engine.add_texture(w, h, RenderDoos::texture_format_rgba8, (const uint8_t*)tmp);
+  delete [] tmp;
   }
 
 void texture::cleanup(RenderDoos::render_engine& engine)

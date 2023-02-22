@@ -108,10 +108,27 @@ uniform vec3 iResolution;
 uniform sampler2D Heightmap;
 uniform sampler2D Normalmap;
 uniform sampler2D Colormap;
+uniform sampler2D Noise;
 
 out vec4 FragColor;
 
 #define MAX_DEPTH 80
+
+float fbm( vec2 p )
+{
+#if 0
+   return texture( Noise, p).x; 
+#else
+    const mat2 m2 = mat2(0.8,-0.6,0.6,0.8);
+    float f = 0.0;
+    const float divider = 1.0;
+    f += 0.5000*texture( Noise, p/divider ).x; p = m2*p*2.02;
+    f += 0.2500*texture( Noise, p/divider ).x; p = m2*p*2.03;
+    f += 0.1250*texture( Noise, p/divider ).x; p = m2*p*2.01;
+    f += 0.0625*texture( Noise, p/divider ).x;
+    return f/0.9375;
+#endif
+}
 
 vec2 scalePosition(in vec2 p)
 {
@@ -155,7 +172,7 @@ vec3 calcNormal( in vec3 pos, float t )
   vec2 p = scalePosition(pos.xz);
   if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0)
     return vec3(0,1,0);
-  return texture( Normalmap, p).rgb;
+  return normalize(texture( Normalmap, p).rgb);
 #else
 	  //float e = 0.001;
 	  float e = 0.001*t;
@@ -164,7 +181,7 @@ vec3 calcNormal( in vec3 pos, float t )
     nor.x = map(pos+eps.xyy) - map(pos-eps.xyy);
     nor.y = map(pos+eps.yxy) - map(pos-eps.yxy);
     nor.z = map(pos+eps.yyx) - map(pos-eps.yyx);
-    return -normalize(nor);
+    return normalize(nor);
 #endif
 }
 
@@ -212,28 +229,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
   //    dot(rd, planeUp)
   //);
     
-  vec3 sunDir = normalize(vec3(0, +0.5, -1));
+  vec3 sunDir = normalize( vec3(-0.8,0.4,-0.3) );
   float t = intersect(ro, rd);
-#if 0  
-  if (t == -1)
-    {
-    float scale = 1.0;
-    float sundot = clamp(dot(rd,sunDir),0.0,1.0);
-    // sky		
-    vec3 col = vec3(0.3,0.5,0.85) - rd.y*rd.y*0.5;
-    col = mix( col, 0.85*vec3(0.7,0.75,0.85), pow( 1.0-max(rd.y,0.0), 4.0 ) );
-    // sun
-		col += 0.25*vec3(1.0,0.7,0.4)*pow( sundot,5.0 );
-		col += 0.25*vec3(1.0,0.8,0.6)*pow( sundot,64.0 );
-		col += 0.2*vec3(1.0,0.8,0.6)*pow( sundot,512.0 );
-    // clouds
-		//vec2 sc = ro.xz + rd.xz*(scale*1000.0-ro.y)/rd.y;
-		//col = mix( col, vec3(1.0,0.95,1.0), 0.5*smoothstep(0.5,0.8,fbm(0.0005*sc/scale)) );
-    // horizon
-    col = mix( col, 0.68*vec3(0.4,0.65,1.0), pow( 1.0-max(rd.y,0.0), 16.0 ) );
-    fragColor = vec4(pow(col*1.2, vec3(2.2)), 0.3);
-    }
-#endif
+
   if (t > 0.0)
     {	
 		// Get some information about our intersection
@@ -244,8 +242,32 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     if (texCol.a > 0)
       {		
 		  vec3 col = vec3(pow(texCol.rgb, vec3(0.5)));
+      float fre = clamp( 1.0+dot(rd,normal), 0.0, 1.0 );
+      vec3 ref = reflect( rd, normal );
 
-      col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.7 + col*0.3;
+      //col *= 0.95+8*sqrt(fbm(pos.xz*15)*fbm(pos.xz*10));
+	    col *= 0.8+0.8*sqrt(fbm(pos.xz*0.004)*fbm(pos.xz*0.0005));
+      // snow
+		  float h = smoothstep(2,5.0,pos.y+0.5*fbm(pos.xz*0.1));
+      float e = smoothstep(1.0-0.5*h,1.0-0.1*h,normal.y);
+      float o = 0.3 + 0.7*smoothstep(0.0,0.1,normal.x+h*h);
+      float s = h*e*o;
+      col = mix( col, 1.8*vec3(0.62,0.65,0.7), smoothstep( 0.1, 0.9, s ) );
+
+      // lighting		
+      float amb = clamp(0.7+0.3*normal.y,0.0,1.0);
+	    float dif = clamp( dot( sunDir, normal ), 0.0, 1.0 );
+	    float bac = clamp( 0.2 + 0.8*dot( normalize( vec3(-sunDir.x, 0.0, sunDir.z ) ), normal ), 0.0, 1.0 );
+		
+	    vec3 lin  = vec3(0.0);
+	    lin += dif*vec3(0.50,0.50,0.50)*1.2;
+	    lin += amb*vec3(0.50,0.50,0.5)*1.3;
+      lin += bac*vec3(0.1,0.05,0.05)*2;
+	    col *= lin;
+
+      col += s*0.65*pow(fre,4.0)*vec3(0.3,0.5,0.6)*smoothstep(0.0,0.6,ref.y);
+      //col += 0.35*pow(fre,4.0)*vec3(0.3,0.5,0.6)*smoothstep(0.0,0.6,ref.y);
+      //col = col * clamp(-dot(normal, sunDir), 0.0f, 1.0f) * 0.7 + col*0.3;
       
       // fog
       float fo = 1-exp(-pow(clamp((t-MAX_DEPTH*0.5)/MAX_DEPTH, 0.0, 1.0), 1)*10);

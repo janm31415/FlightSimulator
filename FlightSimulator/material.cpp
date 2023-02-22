@@ -206,9 +206,11 @@ terrain_material::terrain_material()
   texture_heightmap = -1;
   texture_normalmap = -1;
   texture_colormap = -1;
+  texture_noise = -1;
   heightmap_handle = -1;
   normalmap_handle = -1;
   colormap_handle = -1;
+  noise_handle = -1;
   res_w = 800;
   res_h = 450;
   }
@@ -228,6 +230,7 @@ void terrain_material::destroy(RenderDoos::render_engine* engine)
   engine->remove_uniform(heightmap_handle);
   engine->remove_uniform(normalmap_handle);
   engine->remove_uniform(colormap_handle);
+  engine->remove_uniform(noise_handle);
   }
 
 void terrain_material::set_texture_heightmap(int32_t id)
@@ -243,6 +246,11 @@ void terrain_material::set_texture_normalmap(int32_t id)
 void terrain_material::set_texture_colormap(int32_t id)
   {
   texture_colormap = id;
+  }
+
+void terrain_material::set_texture_noise(int32_t id)
+  {
+  texture_noise = id;
   }
 
 void terrain_material::set_resolution(uint32_t w, uint32_t h)
@@ -270,6 +278,7 @@ void terrain_material::compile(RenderDoos::render_engine* engine)
   heightmap_handle = engine->add_uniform("Heightmap", RenderDoos::uniform_type::sampler, 1);
   normalmap_handle = engine->add_uniform("Normalmap", RenderDoos::uniform_type::sampler, 1);
   colormap_handle = engine->add_uniform("Colormap", RenderDoos::uniform_type::sampler, 1);
+  noise_handle = engine->add_uniform("Noise", RenderDoos::uniform_type::sampler, 1);
   }
 
 void terrain_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* /*light_dir*/)
@@ -285,10 +294,13 @@ void terrain_material::bind(RenderDoos::render_engine* engine, float* projection
   engine->set_uniform(normalmap_handle, (void*)&tex);
   tex = 2;
   engine->set_uniform(colormap_handle, (void*)&tex);
+  tex = 3;
+  engine->set_uniform(noise_handle, (void*)&tex);
 
   engine->bind_texture_to_channel(texture_heightmap, 0, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
   engine->bind_texture_to_channel(texture_normalmap, 1, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
   engine->bind_texture_to_channel(texture_colormap, 2, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+  engine->bind_texture_to_channel(texture_noise, 3, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
 
   engine->bind_uniform(shader_program_handle, proj_handle);
   engine->bind_uniform(shader_program_handle, cam_handle);
@@ -296,6 +308,7 @@ void terrain_material::bind(RenderDoos::render_engine* engine, float* projection
   engine->bind_uniform(shader_program_handle, heightmap_handle);
   engine->bind_uniform(shader_program_handle, normalmap_handle);
   engine->bind_uniform(shader_program_handle, colormap_handle);
+  engine->bind_uniform(shader_program_handle, noise_handle);
   }
 
 

@@ -74,6 +74,7 @@ class terrain_material : public material
     void set_texture_heightmap(int32_t id);
     void set_texture_normalmap(int32_t id);
     void set_texture_colormap(int32_t id);
+    void set_texture_noise(int32_t id);
     void set_resolution(uint32_t w, uint32_t h);
 
     uint32_t get_resolution_width() const { return res_w; }
@@ -83,8 +84,8 @@ class terrain_material : public material
     int32_t vs_handle, fs_handle;
     int32_t shader_program_handle;
     int32_t proj_handle, res_handle, cam_handle;
-    int32_t texture_heightmap, texture_normalmap, texture_colormap;
-    int32_t heightmap_handle, normalmap_handle, colormap_handle;
+    int32_t texture_heightmap, texture_normalmap, texture_colormap, texture_noise;
+    int32_t heightmap_handle, normalmap_handle, colormap_handle, noise_handle;
     uint32_t res_w, res_h;
   };
 

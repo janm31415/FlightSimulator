@@ -149,13 +149,15 @@ void view::loop()
   cmat.compile(&_engine);
 
   terrain_material tmat;
-  texture heightmap, normalmap, colormap;
+  texture heightmap, normalmap, colormap, noise;
   heightmap.init_from_file(_engine, "assets/textures/terrain/heightmap.png");
   normalmap.init_from_file(_engine, "assets/textures/terrain/normalmap.png");
   colormap.init_from_file(_engine, "assets/textures/terrain/colormap.png");
+  noise.init_from_noise(_engine, heightmap.w, heightmap.h, 0);
   tmat.set_texture_colormap(colormap.texture_id);
   tmat.set_texture_heightmap(heightmap.texture_id);
   tmat.set_texture_normalmap(normalmap.texture_id);
+  tmat.set_texture_noise(noise.texture_id);
   tmat.set_resolution(_w / 2, _h / 2);
   tmat.compile(&_engine);
 
@@ -575,6 +577,7 @@ void view::loop()
   heightmap.cleanup(_engine);
   normalmap.cleanup(_engine);
   colormap.cleanup(_engine);
+  noise.cleanup(_engine);
   skybox.cleanup(_engine);
   fuselage.cleanup(_engine);
   propeller.cleanup(_engine);

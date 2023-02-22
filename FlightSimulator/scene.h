@@ -53,10 +53,12 @@ struct texture
   ~texture();
 
   void init_from_file(RenderDoos::render_engine& engine, const std::string& filename);
+  void init_from_noise(RenderDoos::render_engine& engine, int width, int height, uint32_t seed);
   void cleanup(RenderDoos::render_engine& engine);
 
   int32_t texture_id;
   unsigned char* im;
+  int w, h;
   };
 
 struct cubemap
