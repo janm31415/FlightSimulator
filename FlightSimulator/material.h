@@ -170,3 +170,23 @@ class font_material : public material
     FT_Library _ft;
     FT_Face _face;
   };
+
+class sprite_material : public material
+  {
+  public:
+    sprite_material();
+    virtual ~sprite_material();
+
+    void set_sprite(int32_t texture_id, int32_t flags);
+
+    virtual void compile(RenderDoos::render_engine* engine);
+    virtual void bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* light_dir);
+    virtual void destroy(RenderDoos::render_engine* engine);
+
+  private:
+    int32_t vs_handle, fs_handle;
+    int32_t shader_program_handle;
+    int32_t texture_id;
+    int32_t texture_flags;
+    int32_t vp_handle, cam_handle, tex0_handle; // uniforms
+  };

@@ -70,7 +70,7 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-DMEMORY_LEAK_TRACKING)
 
 if (WIN32)
-add_executable(FlightSimulator ${HDRS} ${SRCS} ${SHADERS})
+add_executable(FlightSimulator WIN32 ${HDRS} ${SRCS} ${SHADERS})
 else()
 add_executable(FlightSimulator ${HDRS} ${SRCS} ${STB} ${SHADERS})
 endif(WIN32)

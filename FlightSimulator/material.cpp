@@ -56,7 +56,6 @@ void simple_material::destroy(RenderDoos::render_engine* engine)
   engine->remove_program(shader_program_handle);
   engine->remove_shader(vs_handle);
   engine->remove_shader(fs_handle);
-  engine->remove_texture(tex_handle);
   engine->remove_texture(dummy_tex_handle);
   engine->remove_uniform(vp_handle);
   engine->remove_uniform(cam_handle);
@@ -158,7 +157,6 @@ void cubemap_material::destroy(RenderDoos::render_engine* engine)
   engine->remove_program(shader_program_handle);
   engine->remove_shader(vs_handle);
   engine->remove_shader(fs_handle);
-  engine->remove_texture(tex_handle);
   engine->remove_uniform(projection_handle);
   engine->remove_uniform(cam_handle);
   engine->remove_uniform(tex0_handle);
@@ -350,8 +348,6 @@ void blit_material::destroy(RenderDoos::render_engine* engine)
   engine->remove_program(shader_program_handle);
   engine->remove_shader(vs_handle);
   engine->remove_shader(fs_handle);
-  engine->remove_texture(fg_tex_handle);
-  engine->remove_texture(bg_tex_handle);
   engine->remove_uniform(vp_handle);
   engine->remove_uniform(cam_handle);
   engine->remove_uniform(tex0_handle);
@@ -647,4 +643,78 @@ void font_material::prepare_text(RenderDoos::render_engine* engine, const char* 
 void font_material::render_text(RenderDoos::render_engine* engine)
   {
   engine->geometry_draw(geometry_id);
+  }
+
+
+sprite_material::sprite_material()
+  {
+  vs_handle = -1;
+  fs_handle = -1;
+  shader_program_handle = -1;
+  texture_id = -1;
+  vp_handle = -1;
+  cam_handle = -1;
+  tex0_handle = -1;
+  }
+
+sprite_material::~sprite_material()
+  {
+  }
+
+void sprite_material::set_sprite(int32_t tex_id, int32_t flags)
+  {
+  if (tex_id >= 0 && tex_id < MAX_TEXTURE)
+    texture_id = tex_id;
+  else
+    texture_id = -1;
+  texture_flags = flags;
+  }
+
+void sprite_material::destroy(RenderDoos::render_engine* engine)
+  {
+  engine->remove_program(shader_program_handle);
+  engine->remove_shader(vs_handle);
+  engine->remove_shader(fs_handle);
+  engine->remove_uniform(vp_handle);
+  engine->remove_uniform(cam_handle);
+  engine->remove_uniform(tex0_handle);
+  }
+
+void sprite_material::compile(RenderDoos::render_engine* engine)
+  {
+  using namespace RenderDoos;
+  if (engine->get_renderer_type() == renderer_type::METAL)
+    {
+    vs_handle = engine->add_shader(nullptr, SHADER_VERTEX, "sprite_material_vertex_shader");
+    fs_handle = engine->add_shader(nullptr, SHADER_FRAGMENT, "sprite_material_fragment_shader");
+    }
+  else if (engine->get_renderer_type() == renderer_type::OPENGL)
+    {
+    vs_handle = engine->add_shader(get_sprite_material_vertex_shader().c_str(), SHADER_VERTEX, nullptr);
+    fs_handle = engine->add_shader(get_sprite_material_fragment_shader().c_str(), SHADER_FRAGMENT, nullptr);
+    }
+  shader_program_handle = engine->add_program(vs_handle, fs_handle);
+  vp_handle = engine->add_uniform("Projection", uniform_type::mat4, 1);
+  cam_handle = engine->add_uniform("Camera", uniform_type::mat4, 1);
+  tex0_handle = engine->add_uniform("Tex0", uniform_type::sampler, 1);
+  }
+
+void sprite_material::bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* /*light_dir*/)
+  {
+  using namespace RenderDoos;
+
+  engine->set_blending_enabled(true);
+  engine->set_blending_function(RenderDoos::blending_type::src_alpha, RenderDoos::blending_type::one_minus_src_alpha);
+  engine->set_blending_equation(RenderDoos::blending_equation_type::add);
+
+  engine->bind_program(shader_program_handle);
+
+  engine->set_uniform(vp_handle, (void*)projection);
+  engine->set_uniform(cam_handle, (void*)camera_space);
+  int32_t tex = 0;
+  engine->set_uniform(tex0_handle, (void*)&tex);
+  engine->bind_uniform(shader_program_handle, vp_handle);
+  engine->bind_uniform(shader_program_handle, cam_handle);
+  engine->bind_uniform(shader_program_handle, tex0_handle);
+  engine->bind_texture_to_channel(texture_id, 0, texture_flags);  
   }

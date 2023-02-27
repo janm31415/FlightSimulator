@@ -132,6 +132,15 @@ void view::loop()
   texture colors;
   colors.init_from_file(_engine, "assets/textures/colors.png");
 
+  texture cross;
+  cross.init_from_file(_engine, "assets/textures/cross.png");
+
+  texture fpm;
+  fpm.init_from_file(_engine, "assets/textures/fpm.png");
+
+  sprite_material sprite_mat;
+  sprite_mat.compile(&_engine);
+
   cubemap skybox;
   skybox.init_from_file(_engine,
     "assets/textures/skybox/front.jpg",
@@ -545,6 +554,39 @@ void view::loop()
 
     _engine.renderpass_end();
 
+    if (!orbit)
+      {
+      //////////////////////
+      /// Cross pass
+      //////////////////////
+
+      const float cross_scale = 0.05;
+      descr.clear_flags = CLEAR_DEPTH;
+      _engine.renderpass_begin(descr);
+      view_matrix = jtk::get_identity();
+      view_matrix[0] *= cross_scale;
+      view_matrix[5] *= cross_scale;
+      sprite_mat.set_sprite(cross.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+      sprite_mat.bind(&_engine, &projection_ortho[0], &view_matrix[0], nullptr);
+      _engine.geometry_draw(quad_id);
+      _engine.renderpass_end();
+      _engine.renderpass_begin(descr);
+      view_matrix = jtk::get_identity();
+      view_matrix[0] *= cross_scale;
+      view_matrix[5] *= cross_scale;
+      jtk::vec3<float> dir = jtk::normalize(aircraft.rigid_body.get_body_velocity());
+      view_matrix[12] = dir.x*1.0;
+      view_matrix[13] = dir.y*1.0;
+      //view_matrix[14] = dir.z;      
+      sprite_mat.set_sprite(fpm.texture_id, TEX_WRAP_REPEAT | TEX_FILTER_LINEAR);
+      sprite_mat.bind(&_engine, &projection_ortho[0], &view_matrix[0], nullptr);
+      _engine.geometry_draw(quad_id);
+      _engine.renderpass_end();
+
+      _engine.set_blending_enabled(false);
+
+      }
+
     //////////////////////
     /// Text info pass
     //////////////////////
@@ -552,10 +594,10 @@ void view::loop()
     std::stringstream feedback_text_str;
     feedback_text_str << "speed: " << (int)physics::units::kilometer_per_hour(jtk::length(aircraft.rigid_body.get_velocity())) << "km/h\n";
     feedback_text_str << "alt: " << (int)aircraft.rigid_body.get_position().y << "m\n";
-    feedback_text_str << "throttle: " << (double)((int)(aircraft.engine.throttle*100)) / 100.0;
+    feedback_text_str << "throttle: " << (double)((int)(aircraft.engine.throttle * 100)) / 100.0;
     std::string feedback_text = feedback_text_str.str();
     fmat.prepare_text(&_engine, feedback_text.c_str(), -1.0, -0.9, 2.0 / (double)_w, 2.0 / (double)_h, 0xffffffff);
-    
+
     descr.clear_flags = CLEAR_DEPTH;
     _engine.renderpass_begin(descr);
 
@@ -581,7 +623,7 @@ void view::loop()
     _engine.geometry_draw(quad_id);
 
     _engine.renderpass_end();
-    
+
     _engine.frame_end();
 
 
@@ -598,6 +640,7 @@ void view::loop()
   tmat.destroy(&_engine);
   bmat.destroy(&_engine);
   fmat.destroy(&_engine);
+  sprite_mat.destroy(&_engine);
   heightmap.cleanup(_engine);
   normalmap.cleanup(_engine);
   colormap.cleanup(_engine);
@@ -606,4 +649,6 @@ void view::loop()
   fuselage.cleanup(_engine);
   propeller.cleanup(_engine);
   colors.cleanup(_engine);
+  cross.cleanup(_engine);
+  fpm.cleanup(_engine);
   }

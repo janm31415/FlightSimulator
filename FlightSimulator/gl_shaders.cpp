@@ -347,7 +347,6 @@ out vec3 text_color;
 
 void main() {
     frag_tex_coord = uv;
-    //frag_tex_coord.y = 1-frag_tex_coord.y;
     text_color = color;
     gl_Position = vec4(pos, 0, 1);
 }
@@ -373,5 +372,38 @@ void main() {
     uint a = imageLoad(font_texture, ivec2(x, y)).r;
     outColor = vec4(1, 1, 1, float(a)/255.0)*vec4(text_color, 1);
 }
+)");
+  }
+
+
+std::string get_sprite_material_vertex_shader()
+  {
+  return std::string(R"(#version 330 core
+layout (location = 0) in vec3 vPosition;
+//layout (location = 1) in vec3 vNormal;
+layout (location = 2) in vec2 vTexCoord;
+uniform mat4 Projection; // columns
+uniform mat4 Camera; // columns
+out vec2 TexCoord;
+
+void main() 
+  {
+  gl_Position = Projection*Camera*vec4(vPosition.xyz,1);
+  TexCoord = vTexCoord;
+  }
+)");
+  }
+
+std::string get_sprite_material_fragment_shader()
+  {
+  return std::string(R"(#version 330 core
+out vec4 FragColor;
+in vec2 TexCoord;
+uniform sampler2D Tex0;
+
+void main()
+  {
+  FragColor = texture(Tex0, TexCoord);   
+  }
 )");
   }
