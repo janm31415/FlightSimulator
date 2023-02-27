@@ -578,7 +578,7 @@ namespace
     }
   }
 
-void font_material::render_text(RenderDoos::render_engine* engine, const char* text, float x, float y, float sx, float sy, uint32_t clr)
+void font_material::prepare_text(RenderDoos::render_engine* engine, const char* text, float x, float y, float sx, float sy, uint32_t clr)
   {
   if (geometry_id >= 0)
     engine->remove_geometry(geometry_id);
@@ -641,5 +641,10 @@ void font_material::render_text(RenderDoos::render_engine* engine, const char* t
     *ip++ = i * 6 + 5;
     }
   engine->geometry_end(geometry_id);
+  //engine->geometry_draw(geometry_id);
+  }
+
+void font_material::render_text(RenderDoos::render_engine* engine)
+  {
   engine->geometry_draw(geometry_id);
   }

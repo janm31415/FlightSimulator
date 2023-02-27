@@ -549,16 +549,18 @@ void view::loop()
     /// Text info pass
     //////////////////////
 
-    descr.clear_flags = CLEAR_DEPTH;
-    _engine.renderpass_begin(descr);
-
-    fmat.bind(&_engine, nullptr, nullptr, nullptr);
     std::stringstream feedback_text_str;
     feedback_text_str << "speed: " << (int)physics::units::kilometer_per_hour(jtk::length(aircraft.rigid_body.get_velocity())) << "km/h\n";
     feedback_text_str << "alt: " << (int)aircraft.rigid_body.get_position().y << "m\n";
     feedback_text_str << "throttle: " << (double)((int)(aircraft.engine.throttle*100)) / 100.0;
-    std::string feedback_text = feedback_text_str.str();    
-    fmat.render_text(&_engine, feedback_text.c_str(), -1.0, -0.9, 2.0 / (double)_w, 2.0 / (double)_h, 0xffffffff);
+    std::string feedback_text = feedback_text_str.str();
+    fmat.prepare_text(&_engine, feedback_text.c_str(), -1.0, -0.9, 2.0 / (double)_w, 2.0 / (double)_h, 0xffffffff);
+    
+    descr.clear_flags = CLEAR_DEPTH;
+    _engine.renderpass_begin(descr);
+
+    fmat.bind(&_engine, nullptr, nullptr, nullptr);
+    fmat.render_text(&_engine);
     _engine.renderpass_end();
     _engine.set_blending_enabled(false);
 
@@ -579,6 +581,7 @@ void view::loop()
     _engine.geometry_draw(quad_id);
 
     _engine.renderpass_end();
+    
     _engine.frame_end();
 
 

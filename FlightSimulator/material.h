@@ -148,8 +148,9 @@ class font_material : public material
     virtual void bind(RenderDoos::render_engine* engine, float* projection, float* camera_space, float* light_dir);
     virtual void destroy(RenderDoos::render_engine* engine);
 
-    void render_text(RenderDoos::render_engine* engine, const char* text, float x, float y, float sx, float sy, uint32_t clr);
-
+    void prepare_text(RenderDoos::render_engine* engine, const char* text, float x, float y, float sx, float sy, uint32_t clr);
+    void render_text(RenderDoos::render_engine* engine);
+    
   private:
 
     void _init_font(RenderDoos::render_engine* engine);
