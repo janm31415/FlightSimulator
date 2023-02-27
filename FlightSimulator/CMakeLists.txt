@@ -88,19 +88,22 @@ target_include_directories(FlightSimulator
     ${CMAKE_CURRENT_SOURCE_DIR}/../stb/ 
     ${CMAKE_CURRENT_SOURCE_DIR}/../RenderDoos
     ${CMAKE_CURRENT_SOURCE_DIR}/../SDL2/include/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../freetype/include/
     )	
 	
 if (${FLIGHTSIM_PLATFORM} STREQUAL "win32")	
 target_link_libraries(FlightSimulator    
     ${OPENGL_LIBRARIES}
     ${GLX_LIBRARIES}
+    freetype
     RenderDoos
     libglew
     SDL2
     SDL2main
     )
 else(${FLIGHTSIM_PLATFORM} STREQUAL "win32")
-target_link_libraries(FlightSimulator             
+target_link_libraries(FlightSimulator
+    freetype
     RenderDoos
     SDL2
     SDL2main

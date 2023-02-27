@@ -148,6 +148,9 @@ void view::loop()
   cubemap_material cmat;
   cmat.compile(&_engine);
 
+  font_material fmat;
+  fmat.compile(&_engine);
+
   terrain_material tmat;
   texture heightmap, normalmap, colormap, noise;
   heightmap.init_from_file(_engine, "assets/textures/terrain/heightmap.png");
@@ -543,6 +546,23 @@ void view::loop()
     _engine.renderpass_end();
 
     //////////////////////
+    /// Text info pass
+    //////////////////////
+
+    descr.clear_flags = CLEAR_DEPTH;
+    _engine.renderpass_begin(descr);
+
+    fmat.bind(&_engine, nullptr, nullptr, nullptr);
+    std::stringstream feedback_text_str;
+    feedback_text_str << "speed: " << (int)physics::units::kilometer_per_hour(jtk::length(aircraft.rigid_body.get_velocity())) << "km/h\n";
+    feedback_text_str << "alt: " << (int)aircraft.rigid_body.get_position().y << "m\n";
+    feedback_text_str << "throttle: " << (double)((int)(aircraft.engine.throttle*100)) / 100.0;
+    std::string feedback_text = feedback_text_str.str();    
+    fmat.render_text(&_engine, feedback_text.c_str(), -1.0, -0.9, 2.0 / (double)_w, 2.0 / (double)_h, 0xffffffff);
+    _engine.renderpass_end();
+    _engine.set_blending_enabled(false);
+
+    //////////////////////
     /// Blit to screen pass
     //////////////////////
 
@@ -574,6 +594,7 @@ void view::loop()
   cmat.destroy(&_engine);
   tmat.destroy(&_engine);
   bmat.destroy(&_engine);
+  fmat.destroy(&_engine);
   heightmap.cleanup(_engine);
   normalmap.cleanup(_engine);
   colormap.cleanup(_engine);

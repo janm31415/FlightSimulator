@@ -128,7 +128,7 @@ void Aircraft::update(physics::seconds dt)
   if ((log_timer += dt) > 0.5f)
     {
     log_timer = 0;
-#if 1
+#if 0
     printf(
       "%.2f km/h, thr: %.2f, alt: %.2f m,  ang. vel: %.2f, %.2f, %.2f\n",
       physics::units::kilometer_per_hour(jtk::length(rigid_body.get_velocity())),

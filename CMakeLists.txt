@@ -50,6 +50,7 @@ message("RenderDoos Platform = ${RENDERDOOS_PLATFORM}")
 message("FlightSimulator Architecture = ${FLIGHTSIM_ARCHITECTURE}")
 message("RenderDoos Architecture = ${RENDERDOOS_ARCHITECTURE}")
 
+add_subdirectory(freetype)
 add_subdirectory(jtk)
 if (${FLIGHTSIM_PLATFORM} STREQUAL "win32")
 add_subdirectory(glew)

@@ -334,3 +334,44 @@ void main()
   }
 )");
   }
+
+std::string get_font_material_vertex_shader()
+  {
+  return std::string(R"(#version 330 core
+layout (location = 0) in vec2 pos;
+layout (location = 1) in vec2 uv;
+layout (location = 2) in vec3 color;
+
+out vec2 frag_tex_coord;
+out vec3 text_color;
+
+void main() {
+    frag_tex_coord = uv;
+    //frag_tex_coord.y = 1-frag_tex_coord.y;
+    text_color = color;
+    gl_Position = vec4(pos, 0, 1);
+}
+)");
+  }
+
+std::string get_font_material_fragment_shader()
+  {
+  return std::string(R"(#version 430 core
+in vec2 frag_tex_coord;
+in vec3 text_color;
+
+out vec4 outColor;
+
+uniform int width;
+uniform int height;
+
+layout(r8ui, binding = 0) readonly uniform uimage2D font_texture;
+
+void main() {
+    int x = int(frag_tex_coord.x * float(width));
+    int y = int(frag_tex_coord.y * float(height));
+    uint a = imageLoad(font_texture, ivec2(x, y)).r;
+    outColor = vec4(1, 1, 1, float(a)/255.0)*vec4(text_color, 1);
+}
+)");
+  }
