@@ -23,3 +23,7 @@ Next use CMake to create a solution file on Windows, or an XCode project on macO
     J K     : decrease / increase thrust
     O       : toggle camera
     mouse   : camera control in orbit mode
+
+## Terrain generation
+
+The terrain was generated with https://github.com/janm31415/HeightMap.
