@@ -334,11 +334,11 @@ void view::loop()
 
     if (key_states[SDL_SCANCODE_Q])
       {
-      joystick.yaw = 1.0f;
+      joystick.yaw = -1.0f;
       }
     else if (key_states[SDL_SCANCODE_E])
       {
-      joystick.yaw = -1.0f;
+      joystick.yaw = 1.0f;
       }
 
     if (key_states[SDL_SCANCODE_J])
