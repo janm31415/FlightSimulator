@@ -389,7 +389,8 @@ out vec2 TexCoord;
 void main() 
   {
   gl_Position = Projection*Camera*vec4(vPosition.xyz,1);
-  TexCoord = vTexCoord;
+  TexCoord.x = vTexCoord.x;
+  TexCoord.y = 1-vTexCoord.y;
   }
 )");
   }
