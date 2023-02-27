@@ -167,15 +167,17 @@ texture::texture() : texture_id(-1), im(nullptr)
 
 texture::~texture()
   {
-  if (im)
-    stbi_image_free(im);
   }
 
 void texture::init_from_file(RenderDoos::render_engine& engine, const std::string& filename)
   {
   int nr_of_channels;
-  im = stbi_load(filename.c_str(), &w, &h, &nr_of_channels, 4);
-  texture_id = engine.add_texture(w, h, RenderDoos::texture_format_rgba8, im);
+  im = stbi_load(filename.c_str(), &w, &h, &nr_of_channels, 4);  
+  if (im)
+    {
+    texture_id = engine.add_texture(w, h, RenderDoos::texture_format_rgba8, im);
+    stbi_image_free(im);
+    }
   }
 
 void texture::init_from_noise(RenderDoos::render_engine& engine, int width, int height, uint32_t seed)
