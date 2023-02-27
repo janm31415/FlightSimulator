@@ -16,3 +16,10 @@ to download all the dependencies.
 
 Next use CMake to create a solution file on Windows, or an XCode project on macOS. You have to set the CMAKE variables FLIGHTSIM_ARCHITECTURE and FLIGHTSIM_PLATFORM to the correct values. The defaults are correct for Windows, but if you have macOS with an ARM processor, you have to change these values with CMake to `arm` and `macos` respectively.
 
+## Controls
+
+    W A S D : pitch and roll
+    Q E     : rudder
+    J K     : decrease / increase thrust
+    O       : toggle camera
+    mouse   : camera control in orbit mode
