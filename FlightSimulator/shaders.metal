@@ -292,3 +292,26 @@ fragment float4 font_material_fragment_shader(const FontVertexOut vertexIn [[sta
   float a = texture.read(uint2(x,y)).r/255.0;
   return float4(1, 1, 1, a)*float4(vertexIn.color, 1);
 }
+
+
+struct SpriteMaterialUniforms {
+  float4x4 projection_matrix;
+  float4x4 camera_matrix;
+};
+
+struct SpriteVertexOut {
+  float4 position [[position]];
+  float2 texcoord;
+};
+
+vertex SpriteVertexOut sprite_material_vertex_shader(const device VertexIn *vertices [[buffer(0)]], uint vertexId [[vertex_id]], constant SpriteMaterialUniforms& input [[buffer(10)]]) {
+  float4 pos(vertices[vertexId].position, 1);
+  SpriteVertexOut out;
+  out.position = input.projection_matrix * input.camera_matrix * pos;
+  out.texcoord = vertices[vertexId].textureCoordinates;
+  return out;
+}
+
+fragment float4 sprite_material_fragment_shader(const SpriteVertexOut vertexIn [[stage_in]], texture2d<float> sprite [[texture(0)]], sampler sampler2d [[sampler(0)]], constant SpriteMaterialUniforms& input [[buffer(10)]]) {
+  return sprite.sample(sampler2d, vertexIn.texcoord);
+}
